@@ -1,0 +1,2 @@
+pandas
+git+http://github.com/dmoggles/dbconnect.git
