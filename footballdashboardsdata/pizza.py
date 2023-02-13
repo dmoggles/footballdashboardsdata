@@ -71,18 +71,19 @@ class PizzaDataSource(DataSource):
             fb.TOUCHES.N,
             'gender',
             'match_id',
+            'dob',
         ]+all_template_columns
         league_str = ','.join([f"'{league}'" for league in leagues])
         query = f"""
         SELECT `{'`,`'.join(all_columns)}` 
         FROM fbref WHERE comp in ({league_str}) AND season = {season}
         """
-        df = Connection('M0neyMa$e').query(query)
-        gender = df['gender'].iloc[0]
+        orig_df = Connection('M0neyMa$e').query(query)
+        gender = orig_df['gender'].iloc[0]
 
-        adjust_factors = possession_adjust.adj_possession_factors(df)
+        adjust_factors = possession_adjust.adj_possession_factors(orig_df)
 
-        fbref_data = FbRefData(df)
+        fbref_data = FbRefData(orig_df)
         transformed_data = fbref_data.pipe(
             filter, [Filter(fb.ENRICHED_POSITION,self.get_comparison_positions(),  filters.IsIn)]
         ).pipe(
@@ -104,6 +105,11 @@ class PizzaDataSource(DataSource):
         )
         
         output_row =  output.loc[(output['Player']==player_name)&(output['Team']==team)].copy()
+        player_dob = orig_df.loc[(orig_df[fb.PLAYER.N]==player_name)&(orig_df[fb.TEAM.N]==team), 'dob'].iloc[0]
+        if player_dob != pd.Timestamp(1900,1,1):
+            output_row['Age']=int((pd.Timestamp.now()-player_dob).days/365)
+        else:
+            output_row['Age']=None
         output_row['Team'] = self._get_decorated_team_name(output_row['Team'].iloc[0], gender).tolist()[0]
         output_row['Competition'] = self._get_decorated_league_name(output_row['Competition'].iloc[0]).tolist()[0]
         return output_row
