@@ -110,6 +110,8 @@ class PizzaDataSource(DataSource):
             output_row['Age']=int((pd.Timestamp.now()-player_dob).days/365)
         else:
             output_row['Age']=None
+        output_row['image_team']=output_row['Team']
+        output_row['image_league']=output_row['Competition']
         output_row['Team'] = self._get_decorated_team_name(output_row['Team'].iloc[0], gender).tolist()[0]
         output_row['Competition'] = self._get_decorated_league_name(output_row['Competition'].iloc[0]).tolist()[0]
         return output_row
