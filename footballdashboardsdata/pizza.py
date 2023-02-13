@@ -39,9 +39,10 @@ class PizzaDataSource(DataSource):
         return data_dict
 
 
-    def _get_decorated_team_name(self, team_name:str)->str:
+    def _get_decorated_team_name(self, team_name:str, gender:str)->str:
         query = f"""
         SELECT decorated_name FROM mclachbot_teams WHERE team_name = '{team_name}'
+        AND gender='{gender}'
         """
         return Connection('M0neyMa$e').query(query).iloc[0]
 
@@ -68,6 +69,7 @@ class PizzaDataSource(DataSource):
             fb.YEAR.N,
             fb.ENRICHED_POSITION.N,
             fb.TOUCHES.N,
+            'gender',
             'match_id',
         ]+all_template_columns
         league_str = ','.join([f"'{league}'" for league in leagues])
@@ -76,6 +78,7 @@ class PizzaDataSource(DataSource):
         FROM fbref WHERE comp in ({league_str}) AND season = {season}
         """
         df = Connection('M0neyMa$e').query(query)
+        gender = df['gender'].iloc[0]
 
         adjust_factors = possession_adjust.adj_possession_factors(df)
 
@@ -99,9 +102,9 @@ class PizzaDataSource(DataSource):
         output = pd.DataFrame(
             data_dict
         )
-
+        
         output_row =  output.loc[(output['Player']==player_name)&(output['Team']==team)].copy()
-        output_row['Team'] = self._get_decorated_team_name(output_row['Team'].iloc[0]).tolist()[0]
+        output_row['Team'] = self._get_decorated_team_name(output_row['Team'].iloc[0], gender).tolist()[0]
         output_row['Competition'] = self._get_decorated_league_name(output_row['Competition'].iloc[0]).tolist()[0]
         return output_row
         
