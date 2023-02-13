@@ -198,10 +198,10 @@ FBTemplate=[
         columns_used=[fb.DISPOSSESSED.N]
     ),
     TemplateAttribute(
-        'Headers Won',
-        lambda df: df[fb.AERIALS_WON.N],
-        True,
-        columns_used=[fb.AERIALS_WON.N]
+        name='Scoring Contributions',
+        calculation=lambda df: (df[fb.NON_PENALTY_GOALS.N] + df[fb.ASSISTS.N]),
+        ascending_rank=True,
+        columns_used=[fb.GOALS.N, fb.ASSISTS.N, fb.PENS_MADE.N]
     ),
     TemplateAttribute(
         'PAdj Dribbled Past',
