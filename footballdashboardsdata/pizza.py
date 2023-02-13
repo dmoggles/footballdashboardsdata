@@ -38,6 +38,20 @@ class PizzaDataSource(DataSource):
         data_dict.update(specific_data)
         return data_dict
 
+
+    def _get_decorated_team_name(self, team_name:str)->str:
+        query = f"""
+        SELECT decorated_name FROM mclachbot_teams WHERE team_name = '{team_name}'
+        """
+        return Connection('M0neyMa$e').query(query).iloc[0]
+
+    def _get_decorated_league_name(self, league_name:str)->str:
+        query = f"""
+        SELECT decorated_name FROM mclachbot_leagues WHERE league_name = '{league_name}'
+        """
+        return Connection('M0neyMa$e').query(query).iloc[0]
+
+
     def impl_get_data(self, player_name:str, leagues:List[str], team:str, season:int)->pd.DataFrame:
         template = self.get_template()
         all_template_columns = [attr.columns_used for attr in template]
@@ -58,7 +72,8 @@ class PizzaDataSource(DataSource):
         ]+all_template_columns
         league_str = ','.join([f"'{league}'" for league in leagues])
         query = f"""
-        SELECT `{'`,`'.join(all_columns)}` FROM fbref WHERE comp in ({league_str}) AND season = {season}
+        SELECT `{'`,`'.join(all_columns)}` 
+        FROM fbref WHERE comp in ({league_str}) AND season = {season}
         """
         df = Connection('M0neyMa$e').query(query)
 
@@ -85,7 +100,10 @@ class PizzaDataSource(DataSource):
             data_dict
         )
 
-        return output.loc[(output['Player']==player_name)&(output['Team']==team)]
+        output_row =  output.loc[(output['Player']==player_name)&(output['Team']==team)].copy()
+        output_row['Team'] = self._get_decorated_team_name(output_row['Team'].iloc[0]).tolist()[0]
+        output_row['Competition'] = self._get_decorated_league_name(output_row['Competition'].iloc[0]).tolist()[0]
+        return output_row
         
 
 class MidfieldPizzaDataSource(PizzaDataSource):
