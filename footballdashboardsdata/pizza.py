@@ -31,7 +31,9 @@ class PizzaDataSource(DataSource):
         data_dict= {
             'Player': data[fb.PLAYER.N].tolist(),
             'Team': data[fb.TEAM.N].tolist(),
-            'Minutes':data[fb.MINUTES.N].tolist()
+            'Minutes':data[fb.MINUTES.N].tolist(),
+            'Competition':data[fb.COMPETITION.N].tolist(),
+            'Season':data[fb.YEAR.N].tolist(),
         }
         data_dict.update(specific_data)
         return data_dict
@@ -83,7 +85,7 @@ class PizzaDataSource(DataSource):
             data_dict
         )
 
-        return output.loc[(output['Player']==player_name)&(output['Team']==team)].to_dict('records')[0]
+        return output.loc[(output['Player']==player_name)&(output['Team']==team)]
         
 
 class MidfieldPizzaDataSource(PizzaDataSource):
