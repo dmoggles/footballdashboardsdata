@@ -14,7 +14,7 @@ setup(
     name="footballdashboardsdata",
     author="Dmitry Mogilevsky",
     author_email="dmitry.mogilevsky@gmail.com",
-    description="Football Dashboards",
+    description="Football Dashboards DATA",
     version=VERSION.get("__version__", "0.0.0"),
     package_dir={".": "."},
     packages=find_namespace_packages(where="."),
