@@ -175,15 +175,15 @@ FBTemplate=[
     ),
     TemplateAttribute(
         name='Completed Crosses',
-        calculation=lambda df: df[fb.CROSSES_INTO_PENALTY_AREA],
+        calculation=lambda df: df[fb.CROSSES_INTO_PENALTY_AREA.N],
         ascending_rank=True,
-        columns_used=[fb.CROSSES_INTO_PENALTY_AREA]
+        columns_used=[fb.CROSSES_INTO_PENALTY_AREA.N]
     ),
     TemplateAttribute(
         name='Crosses %',
-        calculation=lambda df: 100*df[fb.CROSSES_INTO_PENALTY_AREA]/df[fb.CROSSES.N],
+        calculation=lambda df: 100*df[fb.CROSSES_INTO_PENALTY_AREA.N]/df[fb.CROSSES.N],
         ascending_rank=True,
-        columns_used=[fb.CROSSES_INTO_PENALTY_AREA, fb.CROSSES.N]
+        columns_used=[fb.CROSSES_INTO_PENALTY_AREA.N, fb.CROSSES.N]
     ),
     TemplateAttribute(
         'Successful Dribbles',
