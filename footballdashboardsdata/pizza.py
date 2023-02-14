@@ -44,13 +44,18 @@ class PizzaDataSource(DataSource):
         SELECT decorated_name FROM mclachbot_teams WHERE team_name = '{team_name}'
         AND gender='{gender}'
         """
-        return Connection('M0neyMa$e').query(query).iloc[0]
-
+        result =  Connection('M0neyMa$e').query(query)
+        if len(result) == 0:
+            return team_name
+        return result['decorated_name'].values[0]
     def _get_decorated_league_name(self, league_name:str)->str:
         query = f"""
         SELECT decorated_name FROM mclachbot_leagues WHERE league_name = '{league_name}'
         """
-        return Connection('M0neyMa$e').query(query).iloc[0]
+        result = Connection('M0neyMa$e').query(query)
+        if len(result) == 0:
+            return league_name
+        return result['decorated_name'].values[0]
 
 
     def impl_get_data(self, player_name:str, leagues:List[str], team:str, season:int)->pd.DataFrame:
@@ -107,13 +112,13 @@ class PizzaDataSource(DataSource):
         output_row =  output.loc[(output['Player']==player_name)&(output['Team']==team)].copy()
         player_dob = orig_df.loc[(orig_df[fb.PLAYER.N]==player_name)&(orig_df[fb.TEAM.N]==team), 'dob'].iloc[0]
         if player_dob != pd.Timestamp(1900,1,1):
-            output_row['Age']=int((pd.Timestamp.now()-player_dob).days/365)
+            output_row['Age']=int((min(orig_df[fb.DATE.N])-player_dob).days/365)
         else:
             output_row['Age']=None
         output_row['image_team']=output_row['Team']
         output_row['image_league']=output_row['Competition']
-        output_row['Team'] = self._get_decorated_team_name(output_row['Team'].iloc[0], gender).tolist()[0]
-        output_row['Competition'] = self._get_decorated_league_name(output_row['Competition'].iloc[0]).tolist()[0]
+        output_row['Team'] = self._get_decorated_team_name(output_row['Team'].iloc[0], gender)
+        output_row['Competition'] = self._get_decorated_league_name(output_row['Competition'].iloc[0])
         return output_row
         
 
