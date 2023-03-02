@@ -1,14 +1,21 @@
 from typing import Callable
 import dataclasses
+import enum
 import pandas as pd
 from footmav import fb
+
+enum.Enum
+class PossessionAdjustment:
+    NONE = 0
+    OUT_OF_POSS = 1
+    IN_POSS = 2
 @dataclasses.dataclass
 class TemplateAttribute:
     name: str
     calculation: Callable[[pd.DataFrame], pd.Series]
     ascending_rank:bool
     columns_used: list = dataclasses.field(default_factory=list)
-
+    possession_adjust: PossessionAdjustment = PossessionAdjustment.NONE
 
 
 MFTemplate=[
@@ -56,21 +63,24 @@ MFTemplate=[
     ),
     TemplateAttribute(
         'PAdj Dribbled Past',
-        lambda df: df[fb.DRIBBLED_PAST.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.DRIBBLED_PAST.N],
         False,
-        columns_used=[fb.DRIBBLED_PAST.N]
+        columns_used=[fb.DRIBBLED_PAST.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         'PAdj Tackles',
-        lambda df: df[fb.TACKLES.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.TACKLES.N],
         True,
-        columns_used=[fb.TACKLES.N]
+        columns_used=[fb.TACKLES.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         'PAdj Interceptions',
-        lambda df: df[fb.INTERCEPTIONS.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.INTERCEPTIONS.N],
         True,
-        columns_used=[fb.INTERCEPTIONS.N]
+        columns_used=[fb.INTERCEPTIONS.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         'Progressive Passes',
@@ -89,33 +99,38 @@ CBTemplate=[
     ),
      TemplateAttribute(
         'PAdj Dribbled Past',
-        lambda df: df[fb.DRIBBLED_PAST.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.DRIBBLED_PAST.N],
         False,
-        columns_used=[fb.DRIBBLED_PAST.N]
+        columns_used=[fb.DRIBBLED_PAST.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         'PAdj Tackles',
-        lambda df: df[fb.TACKLES.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.TACKLES.N],
         True,
-        columns_used=[fb.TACKLES.N]
+        columns_used=[fb.TACKLES.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         'PAdj Interceptions',
-        lambda df: df[fb.INTERCEPTIONS.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.INTERCEPTIONS.N],
         True,
-        columns_used=[fb.INTERCEPTIONS.N]
+        columns_used=[fb.INTERCEPTIONS.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         'PAdj Blocks',
-        lambda df: df[fb.BLOCKS.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.BLOCKS.N],
         True,
-        columns_used=[fb.BLOCKS.N]
+        columns_used=[fb.BLOCKS.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         'PAdj Clearances',
-        lambda df: df[fb.CLEARANCES.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.CLEARANCES.N],
         True,
-        columns_used=[fb.CLEARANCES.N]
+        columns_used=[fb.CLEARANCES.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         'Fouls',
@@ -157,15 +172,17 @@ FBTemplate=[
     ),
     TemplateAttribute(
         'PAdj Tackles',
-        lambda df: df[fb.TACKLES.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.TACKLES.N],
         True,
-        columns_used=[fb.TACKLES.N]
+        columns_used=[fb.TACKLES.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         'PAdj Interceptions',
-        lambda df: df[fb.INTERCEPTIONS.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.INTERCEPTIONS.N],
         True,
-        columns_used=[fb.INTERCEPTIONS.N]
+        columns_used=[fb.INTERCEPTIONS.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         name='Key Passes',
@@ -205,9 +222,10 @@ FBTemplate=[
     ),
     TemplateAttribute(
         'PAdj Dribbled Past',
-        lambda df: df[fb.DRIBBLED_PAST.N]*df['out_of_possession_factor'],
+        lambda df: df[fb.DRIBBLED_PAST.N],
         False,
-        columns_used=[fb.DRIBBLED_PAST.N]
+        columns_used=[fb.DRIBBLED_PAST.N],
+        possession_adjust=PossessionAdjustment.OUT_OF_POSS
     ),
     TemplateAttribute(
         'Fouls',

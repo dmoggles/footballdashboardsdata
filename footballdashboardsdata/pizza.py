@@ -5,7 +5,7 @@ from footmav import FbRefData, fb, aggregate_by, filter, filters, Filter, per_90
 from footmav.operations.possession_adjust import possession_adjust
 from footballdashboardsdata.datasource import DataSource
 from footballdashboardsdata.utils import possession_adjust
-from footballdashboardsdata.templates import MFTemplate, CBTemplate, FBTemplate, AttackerTemplate, TemplateAttribute
+from footballdashboardsdata.templates import MFTemplate, CBTemplate, FBTemplate, AttackerTemplate, TemplateAttribute, PossessionAdjustment
 from abc import abstractmethod
 
 
@@ -87,8 +87,23 @@ class PizzaDataSource(DataSource):
         gender = orig_df['gender'].iloc[0]
 
         adjust_factors = possession_adjust.adj_possession_factors(orig_df)
+        orig_df = orig_df.merge(adjust_factors, on=[fb.COMPETITION.N, fb.TEAM.N, fb.YEAR.N], how='left')
+        adjusted_columns = []
+        for attribute in template:
+            if attribute.possession_adjust==PossessionAdjustment.IN_POSS:
+                for col in attribute.columns_used:
+                    if col not in adjusted_columns:
+                        
+                        orig_df[col] = orig_df[col] * orig_df['in_possession_factor']
+                        adjusted_columns.append(col)
+            elif attribute.possession_adjust==PossessionAdjustment.OUT_OF_POSS:
+                for col in attribute.columns_used:
+                    if col not in adjusted_columns:
+                        orig_df[col] = orig_df[col] * orig_df['out_of_possession_factor']
+                        adjusted_columns.append(col)
 
         fbref_data = FbRefData(orig_df)
+
         transformed_data = fbref_data.pipe(
             filter, [Filter(fb.ENRICHED_POSITION,self.get_comparison_positions(),  filters.IsIn)]
         ).pipe(
@@ -98,11 +113,17 @@ class PizzaDataSource(DataSource):
         )
 
 
+
         df = transformed_data.pipe(
             filter, [Filter(fb.MINUTES, transformed_data.df[fb.MINUTES.N].max()/3., filters.GTE)]
         ).df
+        if player_name not in df[fb.PLAYER.N].unique():
+            df_player = transformed_data.pipe(
+                filter, [Filter(fb.PLAYER, player_name, filters.EQ)]
+            ).df
+            df=pd.concat([df, df_player])
 
-        df = df.merge(adjust_factors, on=[fb.COMPETITION.N, fb.TEAM.N, fb.YEAR.N], how='left')
+        
 
         data_dict = self.get_data_dict(df)
         output = pd.DataFrame(
@@ -112,7 +133,7 @@ class PizzaDataSource(DataSource):
         output_row =  output.loc[(output['Player']==player_name)&(output['Team']==team)].copy()
         player_dob = orig_df.loc[(orig_df[fb.PLAYER.N]==player_name)&(orig_df[fb.TEAM.N]==team), 'dob'].iloc[0]
         if player_dob != pd.Timestamp(1900,1,1):
-            output_row['Age']=int((min(orig_df[fb.DATE.N])-player_dob).days/365)
+            output_row['Age']=int((max(orig_df[fb.DATE.N])-player_dob).days/365)
         else:
             output_row['Age']=None
         output_row['image_team']=output_row['Team']
