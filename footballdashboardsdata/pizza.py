@@ -140,6 +140,7 @@ class PizzaDataSource(DataSource):
         output_row['image_league']=output_row['Competition']
         output_row['Team'] = self._get_decorated_team_name(output_row['Team'].iloc[0], gender)
         output_row['Competition'] = self._get_decorated_league_name(output_row['Competition'].iloc[0])
+        output_row['All Competitions'] = ','.join(orig_df[fb.COMPETITION.N].unique().tolist())
         return output_row
         
 
