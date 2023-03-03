@@ -50,7 +50,7 @@ MFTemplate=[
         columns_used=[fb.DRIBBLES_COMPLETED.N]
     ),
     TemplateAttribute(
-        'Dispossesses',
+        'Dispossessed',
         lambda df: df[fb.DISPOSSESSED.N],
         False,
         columns_used=[fb.DISPOSSESSED.N]
@@ -64,7 +64,7 @@ MFTemplate=[
     TemplateAttribute(
         'Pct of Dribblers Tackled',
         lambda df: df[fb.TACKLES_VS_DRIBBLES_WON.N]/df[fb.TACKLES_VS_DRIBBLES.N],
-        False,
+        True,
         columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
     ),
     TemplateAttribute(
@@ -99,7 +99,7 @@ CBTemplate=[
     TemplateAttribute(
         'Pct of Dribblers Tackled',
         lambda df: df[fb.TACKLES_VS_DRIBBLES_WON.N]/df[fb.TACKLES_VS_DRIBBLES.N],
-        False,
+        True,
         columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
     ),
     TemplateAttribute(
@@ -207,7 +207,7 @@ FBTemplate=[
         columns_used=[fb.DRIBBLES_COMPLETED.N]
     ),
     TemplateAttribute(
-        'Dispossesses',
+        'Dispossessed',
         lambda df: df[fb.DISPOSSESSED.N],
         False,
         columns_used=[fb.DISPOSSESSED.N]
@@ -221,7 +221,7 @@ FBTemplate=[
     TemplateAttribute(
         'Pct of Dribblers Tackled',
         lambda df: df[fb.TACKLES_VS_DRIBBLES_WON.N]/df[fb.TACKLES_VS_DRIBBLES.N],
-        False,
+        True,
         columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
     ),
     TemplateAttribute(
