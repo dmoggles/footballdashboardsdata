@@ -272,10 +272,10 @@ AttackerTemplate=[
         columns_used=[fb.XA.N]
     ),
     TemplateAttribute(
-        'Through Balls',
-        lambda df: df[fb.THROUGH_BALLS.N],
+        'Open Play Shots Created',
+        lambda df: df[fb.SCA.N]-df[fb.SCA_PASSES_DEAD.N],
         True,
-        columns_used=[fb.THROUGH_BALLS.N]
+        columns_used=[fb.SCA.N,fb.SCA_PASSES_DEAD.N]
     ),
     TemplateAttribute(
         'Int+Tackles',
