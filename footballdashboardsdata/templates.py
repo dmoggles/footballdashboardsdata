@@ -62,11 +62,10 @@ MFTemplate=[
         columns_used=[fb.FOULS.N]
     ),
     TemplateAttribute(
-        'PAdj Dribbled Past',
-        lambda df: df[fb.DRIBBLED_PAST.N],
+        'Pct of Dribblers Tackled',
+        lambda df: df[fb.TACKLES_VS_DRIBBLES_WON.N]/[fb.TACKLES_VS_DRIBBLES.N],
         False,
-        columns_used=[fb.DRIBBLED_PAST.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS
+        columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
     ),
     TemplateAttribute(
         'PAdj Tackles',
@@ -97,12 +96,11 @@ CBTemplate=[
         ascending_rank=True,
         columns_used=[fb.PASSES_COMPLETED.N, fb.PASSES.N]
     ),
-     TemplateAttribute(
-        'PAdj Dribbled Past',
-        lambda df: df[fb.DRIBBLED_PAST.N],
+    TemplateAttribute(
+        'Pct of Dribblers Tackled',
+        lambda df: df[fb.TACKLES_VS_DRIBBLES_WON.N]/[fb.TACKLES_VS_DRIBBLES.N],
         False,
-        columns_used=[fb.DRIBBLED_PAST.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS
+        columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
     ),
     TemplateAttribute(
         'PAdj Tackles',
@@ -221,11 +219,10 @@ FBTemplate=[
         columns_used=[fb.GOALS.N, fb.ASSISTS.N, fb.PENS_MADE.N]
     ),
     TemplateAttribute(
-        'PAdj Dribbled Past',
-        lambda df: df[fb.DRIBBLED_PAST.N],
+        'Pct of Dribblers Tackled',
+        lambda df: df[fb.TACKLES_VS_DRIBBLES_WON.N]/[fb.TACKLES_VS_DRIBBLES.N],
         False,
-        columns_used=[fb.DRIBBLED_PAST.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS
+        columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
     ),
     TemplateAttribute(
         'Fouls',
