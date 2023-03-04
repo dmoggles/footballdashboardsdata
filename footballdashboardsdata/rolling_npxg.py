@@ -43,7 +43,13 @@ class RollingNPXGDataSource(DataSource):
         if normalized:
             npxg_for_against_rolling = npxg_for_against_rolling[[fb.DATE.N, fb.OPPONENT.N,'npxg_norm','npxg_opp_norm','round']].rename(columns={'npxg_norm':'npxg','npxg_opp_norm':'npxg_opp'})
             
-        return npxg_for_against_rolling[[fb.DATE.N, fb.OPPONENT.N, "npxg", "npxg_opp", "round"]]
+        data =  npxg_for_against_rolling[[fb.DATE.N, fb.OPPONENT.N, "npxg", "npxg_opp", "round"]]
+        data['team'] = team
+        data['league'] = league
+        data['season'] = season
+        data['rolling_window'] = rolling_window
+        data['normalized'] = normalized
+        return data
 
     @classmethod
     def get_name(cls) -> str:
