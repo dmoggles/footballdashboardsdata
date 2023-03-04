@@ -1,2 +1,3 @@
 from footballdashboardsdata.datasource import DataSource
 from footballdashboardsdata.pizza import MidfieldPizzaDataSource
+from footballdashboardsdata.rolling_npxg import RollingNPXGDataSource
