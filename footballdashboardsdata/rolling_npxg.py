@@ -2,6 +2,7 @@ import pandas as pd
 from footballdashboardsdata.datasource import DataSource
 from footmav import FbRefData, fb, aggregate_by, filter, filters, Filter
 from dbconnect.connector import Connection
+from footballdashboardsdata.utils.queries import get_decorated_team_name_from_fb_name, get_decorated_league_name_from_fb_name
 
 class RollingNPXGDataSource(DataSource):
     def impl_get_data(self, team:str, league:str, season:int, rolling_window:int, normalized:bool)->pd.DataFrame:
@@ -44,8 +45,8 @@ class RollingNPXGDataSource(DataSource):
             npxg_for_against_rolling = npxg_for_against_rolling[[fb.DATE.N, fb.OPPONENT.N,'npxg_norm','npxg_opp_norm','round']].rename(columns={'npxg_norm':'npxg','npxg_opp_norm':'npxg_opp'})
             
         data =  npxg_for_against_rolling[[fb.DATE.N, fb.OPPONENT.N, "npxg", "npxg_opp", "round"]]
-        data['team'] = team
-        data['league'] = league
+        data['team'] = get_decorated_team_name_from_fb_name(team, league)
+        data['league'] = get_decorated_league_name_from_fb_name(league)
         data['season'] = season
         data['rolling_window'] = rolling_window
         data['normalized'] = normalized
