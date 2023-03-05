@@ -15,6 +15,11 @@ from footballdashboardsdata.templates import (
     TemplateAttribute,
     PossessionAdjustment,
 )
+from footballdashboardsdata.utils.queries import (
+    get_decorated_team_name_from_fb_name,
+    get_multiple_decorated_league_names_from_fb_names
+)
+
 from abc import abstractmethod
 
 
@@ -251,43 +256,137 @@ class GKPizzaDataSource(PizzaDataSource):
 
 
 class TeamPizzaDataSource(DataSource):
-
     def _aggregate_by_team(self, df: pd.DataFrame) -> pd.DataFrame:
-        return df.groupby([fb.TEAM.N, fb.COMPETITION.N, fb.YEAR.N]).sum().reset_index()
-    
+        cols = set(df.columns) - set(
+            [
+                fb.TEAM.N,
+                fb.COMPETITION.N,
+                fb.YEAR.N,
+                "match_id",
+                "gender",
+                fb.OPPONENT.N,
+            ]
+        )
+        agg_dict = {col: "sum" for col in cols}
+        agg_dict.update({"match_id": "nunique"})
+        df = (
+            df.groupby([fb.TEAM.N, fb.COMPETITION.N, fb.YEAR.N, "gender"])
+            .agg(agg_dict)
+            .reset_index()
+        )
+        df = df.rename(columns={"match_id": "matches"})
+        return df
+
+    def _aggregate_shot_data(self, df_shots: pd.DataFrame) -> pd.DataFrame:
+        cols_to_sum = ["live_xg", "setpiece_xg", "big_chance"]
+        team_df = (
+            df_shots.groupby([fb.TEAM.N, fb.COMPETITION.N])
+            .agg({c: "sum" for c in cols_to_sum})
+            .reset_index()
+        )
+        opposition_df = (
+            df_shots.groupby([fb.OPPONENT.N, fb.COMPETITION.N])
+            .agg({c: "sum" for c in cols_to_sum})
+            .reset_index()
+        )
+        combined_df = pd.merge(
+            team_df,
+            opposition_df,
+            how="inner",
+            left_on=[fb.TEAM.N, fb.COMPETITION.N],
+            right_on=[fb.OPPONENT.N, fb.COMPETITION.N],
+            suffixes=("_team", "_opp"),
+        ).reset_index()
+        return combined_df
+
     def _aggregate_by_opponent(self, df: pd.DataFrame) -> pd.DataFrame:
-        return df.groupby([fb.OPPONENT.N, fb.COMPETITION, fb.YEAR.N]).sum().reset_index()
-    
+        cols = set(df.columns) - set(
+            [
+                fb.OPPONENT.N,
+                fb.COMPETITION.N,
+                fb.YEAR.N,
+                "match_id",
+                "gender",
+                fb.TEAM.N,
+            ]
+        )
+        agg_dict = {col: "sum" for col in cols}
+        df = (
+            df.groupby([fb.OPPONENT.N, fb.COMPETITION.N, fb.YEAR.N, "gender"])
+            .agg(agg_dict)
+            .reset_index()
+        )
+        return df
+
     @classmethod
     def get_name(cls) -> str:
         return "TeamPizza"
-    
+
     def get_template(self) -> List[TemplateAttribute]:
         return TeamTemplate
-    
+
     def _specific_position_impl(self, data: pd.DataFrame) -> dict:
         data = {
             attrib.name: attrib.calculation(data).rank(
-                pct=True, method="min", ascending=attrib.ascending_rank
+               pct=True, method="min", ascending=attrib.ascending_rank
             )
+            #attrib.name: attrib.calculation(data)
             for attrib in self.get_template()
         }
         return data
-    
+
     def get_data_dict(self, data):
-        
         specific_data = self._specific_position_impl(data)
         data_dict = {
-    
             "Team": data[fb.TEAM.N].tolist(),
             "Competition": data[fb.COMPETITION.N].tolist(),
             "Season": data[fb.YEAR.N].tolist(),
         }
         data_dict.update(specific_data)
         return data_dict
-    
-    def impl_get_data(self, season:int, leagues:List[str], team:str) -> pd.DataFrame:
 
+    def _get_shots_data(self, leagues, season):
+        leagues_str = "'" + "','".join(leagues) + "'"
+        conn = Connection("M0neyMa$e")
+        data = conn.query(
+            f"""
+            SELECT 
+            T1.squad, 
+            T1.xg,
+            T1.psxg,
+            T1.outcome,
+            T1.notes,
+            T1.sca_1_event,
+            T1.comp,
+            T1.season,
+            T2.opponent FROM fbref_shots T1
+            LEFT JOIN 
+            (
+                SELECT DISTINCT(match_id),squad,opponent FROM fbref 
+                WHERE season={season} and comp IN ({leagues_str})
+            ) T2
+            ON 
+            T1.match_id=T2.match_id 
+            AND T1.squad=T2.squad
+            WHERE T1.season={season} AND T1.comp IN ({leagues_str})
+            """
+        )
+        data["is_open_play"] = data.apply(
+            lambda r: (r["notes"] != "penalty")
+            & (r["sca_1_event"] not in ["Pass (Dead)", "Fouled"]),
+            axis=1,
+        )
+        data["is_penalty"] = data["notes"].apply(lambda x: x == "penalty")
+        data["live_xg"] = data["xg"] * data["is_open_play"].astype(int)
+        data["setpiece_xg"] = (
+            data["xg"]
+            * (~data["is_open_play"]).astype(int)
+            * (~data["is_penalty"]).astype(int)
+        )
+        data["big_chance"] = (data["xg"] > 0.3).astype(int)
+        return data
+
+    def impl_get_data(self, season: int, leagues: List[str], team: str) -> pd.DataFrame:
         conn = Connection("M0neyMa$e")
 
         template = self.get_template()
@@ -301,21 +400,37 @@ class TeamPizzaDataSource(DataSource):
             fb.OPPONENT.N,
             fb.COMPETITION.N,
             fb.YEAR.N,
-            fb.DATE.N,
             "gender",
             "match_id",
         ] + all_template_columns
-        data = conn.query(f"""
+        data = conn.query(
+            f"""
             SELECT  `{'`,`'.join(all_columns)}`  FROM fbref WHERE comp in ({','.join([f"'{league}'" for league in leagues])}) AND season = {season}
         """
         )
-
+        shot_data = self._get_shots_data(leagues, season)
+        combined_shot_data = self._aggregate_shot_data(shot_data)
         data_agg_by_team = self._aggregate_by_team(data)
         data_agg_by_opponent = self._aggregate_by_opponent(data)
-        data_combined = data_agg_by_team.merge(data_agg_by_opponent, left_on=fb.TEAM.N, right_on=fb.OPPONENT.N, how='outer', suffixes=('_team', '_opp'))
+        data_combined = data_agg_by_team.merge(
+            data_agg_by_opponent,
+            left_on=[fb.TEAM.N, fb.COMPETITION.N, fb.YEAR.N, "gender"],
+            right_on=[fb.OPPONENT.N, fb.COMPETITION.N, fb.YEAR.N, "gender"],
+            how="outer",
+            suffixes=("_team", "_opp"),
+        ).reset_index()
+        data_combined = data_combined.merge(
+            combined_shot_data,
+            left_on=[fb.TEAM.N, fb.COMPETITION.N],
+            right_on=[fb.TEAM.N, fb.COMPETITION.N],
+            how="outer",
+        )
         data_combined = data_combined.fillna(0)
         data_dict = self.get_data_dict(data_combined)
-        return data_dict
-
-
-        
+        output = pd.DataFrame(data_dict)
+        decorated_league_names = get_multiple_decorated_league_names_from_fb_names(leagues)
+        output = output[output["Team"] == team]
+        output['All Leagues'] = ', '.join(decorated_league_names.values())
+        output['Decorated League'] = output['Competition'].apply(lambda x: decorated_league_names[x])
+        output['Decorated Team'] = get_decorated_team_name_from_fb_name(team, output['Competition'].tolist()[0])
+        return output

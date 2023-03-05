@@ -370,6 +370,74 @@ GoalkeeperTemplate = [
 ]
 
 TeamTemplate = [
-    TemplateAttribute('NPxG', lambda df: df[fb.NPXG.N+"_team"], True, columns_used=[fb.NPXG.N]),
-    TemplateAttribute('NPxG Conceded', lambda df: df[fb.NPXG.N+"_opp"], False, columns_used=[fb.NPXG.N]),
+    TemplateAttribute(
+        "Open Play NPxG",
+        lambda df: df["live_xg_team"] / df["matches"],
+        True,
+        columns_used=[],
+    ),
+    TemplateAttribute(
+        "Open Play NPxGA",
+        lambda df: df["live_xg_opp"] / df["matches"],
+        False,
+        columns_used=[],
+    ),
+    TemplateAttribute(
+        "Set Piece NPxG",
+        lambda df: df["setpiece_xg_team"] / df["matches"],
+        True,
+        columns_used=[],
+    ),
+    TemplateAttribute(
+        "Set Piece NPxGA",
+        lambda df: df["setpiece_xg_opp"] / df["matches"],
+        False,
+        columns_used=[],
+    ),
+    TemplateAttribute(
+        "Big Chance Created",
+        lambda df: df["big_chance_team"] / df["matches"],
+        True,
+        columns_used=[],
+    ),
+    TemplateAttribute(
+        "Shots",
+        lambda df: df[fb.SHOTS_TOTAL.N + "_team"] / df["matches"],
+        True,
+        columns_used=[fb.SHOTS_TOTAL.N],
+    ),
+    TemplateAttribute(
+        "Shots Conceded",
+        lambda df: df[fb.SHOTS_TOTAL.N + "_opp"] / df["matches"],
+        False,
+        columns_used=[fb.SHOTS_TOTAL.N],
+    ),
+    TemplateAttribute(
+        "Directness",
+        lambda df: df[fb.PASSES_PROGRESSIVE_DISTANCE.N + "_team"]
+        / df[fb.PASSES_TOTAL_DISTANCE.N + "_team"],
+        True,
+        columns_used=[fb.PASSES_PROGRESSIVE_DISTANCE.N, fb.PASSES_TOTAL_DISTANCE.N],
+    ),
+    TemplateAttribute(
+        "Possession",
+        lambda df: df[fb.TOUCHES.N + "_team"]
+        / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"]),
+        True,
+        columns_used=[fb.TOUCHES.N],
+    ),
+    TemplateAttribute(
+        "Header Success %",
+        lambda df: df[fb.AERIALS_WON.N + "_team"]
+        / (df[fb.AERIALS_WON.N + "_team"] + df[fb.AERIALS_LOST.N + "_team"]),
+        True,
+        columns_used=[fb.AERIALS_WON.N, fb.AERIALS_LOST.N],
+    ),
+    TemplateAttribute(
+        "PAdj Fouls Committed",
+        lambda df: df[fb.FOULS.N + "_team"] / df["matches"] /  (df[fb.TOUCHES.N + "_opp"]
+        / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"])) * 0.5,
+        False,
+        columns_used=[fb.FOULS.N],
+    ),
 ]
