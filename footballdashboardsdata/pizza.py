@@ -17,7 +17,7 @@ from footballdashboardsdata.templates import (
 )
 from footballdashboardsdata.utils.queries import (
     get_decorated_team_name_from_fb_name,
-    get_multiple_decorated_league_names_from_fb_names
+    get_multiple_decorated_league_names_from_fb_names,
 )
 
 from abc import abstractmethod
@@ -327,10 +327,10 @@ class TeamPizzaDataSource(DataSource):
 
     def _specific_position_impl(self, data: pd.DataFrame) -> dict:
         data = {
-            attrib.name: attrib.calculation(data).rank(
-               pct=True, method="min", ascending=attrib.ascending_rank
-            )
-            #attrib.name: attrib.calculation(data)
+            # attrib.name: attrib.calculation(data).rank(
+            #   pct=True, method="min", ascending=attrib.ascending_rank
+            # )
+            attrib.name: attrib.calculation(data)
             for attrib in self.get_template()
         }
         return data
@@ -428,9 +428,9 @@ class TeamPizzaDataSource(DataSource):
         data_combined = data_combined.fillna(0)
         data_dict = self.get_data_dict(data_combined)
         output = pd.DataFrame(data_dict)
-        decorated_league_names = get_multiple_decorated_league_names_from_fb_names(leagues)
-        output = output[output["Team"] == team]
-        output['All Leagues'] = ', '.join(decorated_league_names.values())
-        output['Decorated League'] = output['Competition'].apply(lambda x: decorated_league_names[x])
-        output['Decorated Team'] = get_decorated_team_name_from_fb_name(team, output['Competition'].tolist()[0])
+        # decorated_league_names = get_multiple_decorated_league_names_from_fb_names(leagues)
+        # output = output[output["Team"] == team]
+        # output['All Leagues'] = ', '.join(decorated_league_names.values())
+        # output['Decorated League'] = output['Competition'].apply(lambda x: decorated_league_names[x])
+        # output['Decorated Team'] = get_decorated_team_name_from_fb_name(team, output['Competition'].tolist()[0])
         return output
