@@ -46,6 +46,7 @@ class RollingNPXGDataSource(DataSource):
             
         data =  npxg_for_against_rolling[[fb.DATE.N, fb.OPPONENT.N, "npxg", "npxg_opp", "round"]]
         data['team'] = get_decorated_team_name_from_fb_name(team, league)
+        data['team_img'] = team
         data['league'] = get_decorated_league_name_from_fb_name(league)
         data['season'] = season
         data['rolling_window'] = rolling_window
