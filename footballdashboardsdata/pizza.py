@@ -11,6 +11,7 @@ from footballdashboardsdata.templates import (
     FBTemplate,
     AttackerTemplate,
     GoalkeeperTemplate,
+    TeamTemplate,
     TemplateAttribute,
     PossessionAdjustment,
 )
@@ -247,3 +248,74 @@ class GKPizzaDataSource(PizzaDataSource):
 
     def get_comparison_positions(self) -> List[str]:
         return ["GK"]
+
+
+class TeamPizzaDataSource(DataSource):
+
+    def _aggregate_by_team(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df.groupby([fb.TEAM.N, fb.COMPETITION.N, fb.YEAR.N]).sum().reset_index()
+    
+    def _aggregate_by_opponent(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df.groupby([fb.OPPONENT.N, fb.COMPETITION, fb.YEAR.N]).sum().reset_index()
+    
+    @classmethod
+    def get_name(cls) -> str:
+        return "TeamPizza"
+    
+    def get_template(self) -> List[TemplateAttribute]:
+        return TeamTemplate
+    
+    def _specific_position_impl(self, data: pd.DataFrame) -> dict:
+        data = {
+            attrib.name: attrib.calculation(data).rank(
+                pct=True, method="min", ascending=attrib.ascending_rank
+            )
+            for attrib in self.get_template()
+        }
+        return data
+    
+    def get_data_dict(self, data):
+        
+        specific_data = self._specific_position_impl(data)
+        data_dict = {
+    
+            "Team": data[fb.TEAM.N].tolist(),
+            "Competition": data[fb.COMPETITION.N].tolist(),
+            "Season": data[fb.YEAR.N].tolist(),
+        }
+        data_dict.update(specific_data)
+        return data_dict
+    
+    def impl_get_data(self, season:int, leagues:List[str], team:str) -> pd.DataFrame:
+
+        conn = Connection("M0neyMa$e")
+
+        template = self.get_template()
+        all_template_columns = [attr.columns_used for attr in template]
+        all_template_columns = [
+            item for sublist in all_template_columns for item in sublist
+        ]
+        all_template_columns = list(set(all_template_columns))
+        all_columns = [
+            fb.TEAM.N,
+            fb.OPPONENT.N,
+            fb.COMPETITION.N,
+            fb.YEAR.N,
+            fb.DATE.N,
+            "gender",
+            "match_id",
+        ] + all_template_columns
+        data = conn.query(f"""
+            SELECT  `{'`,`'.join(all_columns)}`  FROM fbref WHERE comp in ({','.join([f"'{league}'" for league in leagues])}) AND season = {season}
+        """
+        )
+
+        data_agg_by_team = self._aggregate_by_team(data)
+        data_agg_by_opponent = self._aggregate_by_opponent(data)
+        data_combined = data_agg_by_team.merge(data_agg_by_opponent, left_on=fb.TEAM.N, right_on=fb.OPPONENT.N, how='outer', suffixes=('_team', '_opp'))
+        data_combined = data_combined.fillna(0)
+        data_dict = self.get_data_dict(data_combined)
+        return data_dict
+
+
+        

@@ -368,3 +368,8 @@ GoalkeeperTemplate = [
         ],
     ),
 ]
+
+TeamTemplate = [
+    TemplateAttribute('NPxG', lambda df: df[fb.NPXG.N+"_team"], True, columns_used=[fb.NPXG.N]),
+    TemplateAttribute('NPxG Conceded', lambda df: df[fb.NPXG.N+"_opp"], False, columns_used=[fb.NPXG.N]),
+]
