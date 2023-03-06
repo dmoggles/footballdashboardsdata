@@ -400,6 +400,13 @@ TeamTemplate = [
         True,
         columns_used=[fb.SHOTS_TOTAL.N],
     ),
+    
+    TemplateAttribute(
+        "Shots Conceded",
+        lambda df: df[fb.SHOTS_TOTAL.N + "_opp"] / df["matches"],
+        False,
+        columns_used=[fb.SHOTS_TOTAL.N],
+    ),
     TemplateAttribute(
         "Cross % Box Entries",
         lambda df: df[fb.CROSSES_INTO_PENALTY_AREA.N + "_team"]
@@ -414,12 +421,6 @@ TeamTemplate = [
             fb.PASSES_INTO_PENALTY_AREA.N,
             fb.CARRIES_INTO_PENALTY_AREA.N,
         ],
-    ),
-    TemplateAttribute(
-        "Shots Conceded",
-        lambda df: df[fb.SHOTS_TOTAL.N + "_opp"] / df["matches"],
-        False,
-        columns_used=[fb.SHOTS_TOTAL.N],
     ),
     TemplateAttribute(
         "Long Ball %",
