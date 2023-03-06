@@ -36,9 +36,10 @@ def get_multiple_decorated_league_names_from_fb_names(
     fb_league_names: List[str],
 ) -> Dict[str, str]:
     conn = Connection("M0neyMa$e")
+    league_str = ", ".join([f"'{x}'" for x in fb_league_names])
     return (
         conn.query(
-            f"""SELECT league_name, decorated_name FROM mclachbot_leagues WHERE league_name IN {tuple(fb_league_names)}"""
+            f"""SELECT league_name, decorated_name FROM mclachbot_leagues WHERE league_name IN ({league_str})"""
         )
         .set_index("league_name")
         .to_dict()["decorated_name"]
