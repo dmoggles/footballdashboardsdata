@@ -287,6 +287,12 @@ AttackerTemplate = [
         columns_used=[fb.DRIBBLES_COMPLETED.N],
     ),
     TemplateAttribute("NPxG", lambda df: df[fb.NPXG.N], True, columns_used=[fb.NPXG.N]),
+    TemplateAttribute(
+        "NPxG/Shot",
+        lambda df: df[fb.NPXG.N]/df[fb.SHOTS_TOTAL.N],
+        True,
+        columns_used=[fb.NPXG.N,fb.SHOTS_TOTAL.N]
+    ),
 ]
 
 GoalkeeperTemplate = [
