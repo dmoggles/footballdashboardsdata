@@ -33,13 +33,16 @@ class PizzaDataSource(DataSource):
         pass
 
     def _specific_position_impl(self, data: pd.DataFrame) -> dict:
-        data = {
+        data_value = {
+            f"{attrib.name}__value": round(attrib.calculation(data), attrib.sig_figs) for attrib in self.get_template()
+        }
+        data_rank = {
             attrib.name: attrib.calculation(data).rank(
                 pct=True, method="min", ascending=attrib.ascending_rank
             )
             for attrib in self.get_template()
         }
-        return data
+        return {**data_value, **data_rank}
 
     def get_data_dict(self, data):
         specific_data = self._specific_position_impl(data)
@@ -334,7 +337,7 @@ class TeamPizzaDataSource(DataSource):
             for attrib in self.get_template()
         }
         data_value = {
-            f"{attrib.name}__value": attrib.calculation(data) for attrib in self.get_template()
+            f"{attrib.name}__value": round(attrib.calculation(data), attrib.sig_figs) for attrib in self.get_template()
         }
 
         return {**data_rank, **data_value}
