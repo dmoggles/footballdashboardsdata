@@ -202,6 +202,7 @@ FBTemplate = [
         calculation=lambda df: df[fb.CROSSES_INTO_PENALTY_AREA.N],
         ascending_rank=True,
         columns_used=[fb.CROSSES_INTO_PENALTY_AREA.N],
+        sig_figs=2
     ),
     TemplateAttribute(
         name="Crosses %",
@@ -271,7 +272,7 @@ AttackerTemplate = [
         columns_used=[fb.ASSISTS.N],
         sig_figs=2,
     ),
-    TemplateAttribute("xA", lambda df: df[fb.XA.N], True, columns_used=[fb.XA.N]),
+    TemplateAttribute("xA", lambda df: df[fb.XA.N], True, columns_used=[fb.XA.N],sig_figs=2),
     TemplateAttribute(
         "Open Play Shots Created",
         lambda df: df[fb.SCA.N] - df[fb.SCA_PASSES_DEAD.N],
