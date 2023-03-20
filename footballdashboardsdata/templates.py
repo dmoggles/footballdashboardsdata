@@ -42,12 +42,14 @@ MFTemplate = [
         calculation=lambda df: df[fb.THROUGH_BALLS.N],
         ascending_rank=True,
         columns_used=[fb.THROUGH_BALLS.N],
+        sig_figs=2
     ),
     TemplateAttribute(
         name="Scoring Contributions",
         calculation=lambda df: (df[fb.NON_PENALTY_GOALS.N] + df[fb.ASSISTS.N]),
         ascending_rank=True,
         columns_used=[fb.GOALS.N, fb.ASSISTS.N, fb.PENS_MADE.N],
+        sig_figs=2
     ),
     TemplateAttribute(
         "Successful Dribbles",
@@ -232,6 +234,7 @@ FBTemplate = [
         calculation=lambda df: (df[fb.NON_PENALTY_GOALS.N] + df[fb.ASSISTS.N]),
         ascending_rank=True,
         columns_used=[fb.GOALS.N, fb.ASSISTS.N, fb.PENS_MADE.N],
+        sig_figs=2,
     ),
     TemplateAttribute(
         "Pct of Dribblers Tackled",
@@ -252,6 +255,7 @@ AttackerTemplate = [
         lambda df: df[fb.NON_PENALTY_GOALS.N],
         True,
         columns_used=[fb.GOALS.N, fb.PENS_MADE.N],
+        sig_figs=2
     ),
     TemplateAttribute(
         "Shots", lambda df: df[fb.SHOTS_TOTAL.N], True, columns_used=[fb.SHOTS_TOTAL.N]
@@ -271,7 +275,7 @@ AttackerTemplate = [
         
     ),
     TemplateAttribute(
-        "Assists", lambda df: df[fb.ASSISTS.N], True, columns_used=[fb.ASSISTS.N]
+        "Assists", lambda df: df[fb.ASSISTS.N], True, columns_used=[fb.ASSISTS.N], sig_figs=2
     ),
     TemplateAttribute("xA", lambda df: df[fb.XA.N], True, columns_used=[fb.XA.N]),
     TemplateAttribute(
@@ -303,7 +307,9 @@ AttackerTemplate = [
         "NPxG/Shot",
         lambda df: df[fb.NPXG.N]/df[fb.SHOTS_TOTAL.N],
         True,
-        columns_used=[fb.NPXG.N,fb.SHOTS_TOTAL.N]
+        columns_used=[fb.NPXG.N,fb.SHOTS_TOTAL.N],
+        sig_figs=2
+
     ),
 ]
 
@@ -313,6 +319,7 @@ GoalkeeperTemplate = [
         lambda df: df[fb.GOALS_AGAINST_GK.N],
         False,
         columns_used=[fb.GOALS_AGAINST_GK.N],
+        sig_figs=2
     ),
     TemplateAttribute(
         "Save %",
@@ -329,6 +336,7 @@ GoalkeeperTemplate = [
         lambda df: df[fb.PSXG_GK.N] - df[fb.GOALS_AGAINST_GK.N],
         True,
         columns_used=[fb.PSXG_GK.N, fb.GOALS_AGAINST_GK.N],
+        sig_figs=2
     ),
     TemplateAttribute(
         "Crosses Collected",
@@ -396,18 +404,21 @@ TeamTemplate = [
         lambda df: df["live_xg_team"] / df["matches"],
         True,
         columns_used=[],
+        sig_figs=2
     ),
     TemplateAttribute(
         "Open Play NPxGA",
         lambda df: df["live_xg_opp"] / df["matches"],
         False,
         columns_used=[],
+        sig_figs=2
     ),
     TemplateAttribute(
         "Set Piece NPxGD",
         lambda df: (df["setpiece_xg_team"] - df["setpiece_xg_opp"]) / df["matches"],
         True,
         columns_used=[],
+        sig_figs=2
     ),
     TemplateAttribute(
         "Big Chance Created",
