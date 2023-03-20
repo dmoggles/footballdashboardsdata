@@ -25,7 +25,7 @@ class TemplateAttribute:
 MFTemplate = [
     TemplateAttribute(
         name="Passing %",
-        calculation=lambda df: (df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
+        calculation=lambda df: 100* (df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
         ascending_rank=True,
         columns_used=[fb.PASSES_COMPLETED.N, fb.PASSES.N],
     ),
@@ -65,7 +65,7 @@ MFTemplate = [
     TemplateAttribute(
         "Pct of Dribblers Tackled",
         lambda df: (
-            df[fb.TACKLES_VS_DRIBBLES_WON.N] / df[fb.TACKLES_VS_DRIBBLES.N]
+            100* df[fb.TACKLES_VS_DRIBBLES_WON.N] / df[fb.TACKLES_VS_DRIBBLES.N]
         ).fillna(0),
         True,
         columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
@@ -95,13 +95,13 @@ MFTemplate = [
 CBTemplate = [
     TemplateAttribute(
         name="Passing %",
-        calculation=lambda df: (df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
+        calculation=lambda df:100* (df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
         ascending_rank=True,
         columns_used=[fb.PASSES_COMPLETED.N, fb.PASSES.N],
     ),
     TemplateAttribute(
         "Pct of Dribblers Tackled",
-        lambda df: (
+        lambda df: 100*(
             df[fb.TACKLES_VS_DRIBBLES_WON.N] / df[fb.TACKLES_VS_DRIBBLES.N]
         ).fillna(0),
         True,
@@ -168,7 +168,7 @@ CBTemplate = [
 FBTemplate = [
     TemplateAttribute(
         name="Passing %",
-        calculation=lambda df: (df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
+        calculation=lambda df: 100* (df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
         ascending_rank=True,
         columns_used=[fb.PASSES_COMPLETED.N, fb.PASSES.N],
     ),
@@ -226,7 +226,7 @@ FBTemplate = [
     ),
     TemplateAttribute(
         "Pct of Dribblers Tackled",
-        lambda df: (
+        lambda df: 100* (
             df[fb.TACKLES_VS_DRIBBLES_WON.N] / df[fb.TACKLES_VS_DRIBBLES.N]
         ).fillna(0),
         True,
@@ -318,10 +318,10 @@ GoalkeeperTemplate = [
         columns_used=[fb.PSXG_GK.N, fb.GOALS_AGAINST_GK.N],
     ),
     TemplateAttribute(
-        "Crosses Collected %",
-        lambda df: df[fb.CROSSES_STOPPED_GK.N] / df[fb.CROSSES_GK.N],
+        "Crosses Collected",
+        lambda df: df[fb.CROSSES_STOPPED_GK.N] ,
         True,
-        columns_used=[fb.CROSSES_STOPPED_GK.N, fb.CROSSES_GK.N],
+        columns_used=[fb.CROSSES_STOPPED_GK.N],
     ),
     TemplateAttribute(
         "Sweeper Actions",
@@ -349,7 +349,7 @@ GoalkeeperTemplate = [
     ),
     TemplateAttribute(
         "Long Pass % Completed",
-        lambda df: (df[fb.PASSES_COMPLETED_LONG.N] / df[fb.PASSES_LONG.N]).fillna(0),
+        lambda df: 100*(df[fb.PASSES_COMPLETED_LONG.N] / df[fb.PASSES_LONG.N]).fillna(0),
         False,
         columns_used=[fb.PASSES_COMPLETED_LONG.N, fb.PASSES_LONG.N],
     ),
@@ -361,7 +361,7 @@ GoalkeeperTemplate = [
     ),
     TemplateAttribute(
         "Short Pass % Completed",
-        lambda df: (
+        lambda df: 100*(
             (df[fb.PASSES_COMPLETED_SHORT.N] + df[fb.PASSES_COMPLETED_MEDIUM.N])
             / (df[fb.PASSES_SHORT.N] + df[fb.PASSES_MEDIUM.N])
         ).fillna(0),
@@ -415,7 +415,7 @@ TeamTemplate = [
     ),
     TemplateAttribute(
         "Cross % Box Entries",
-        lambda df: df[fb.CROSSES_INTO_PENALTY_AREA.N + "_team"]
+        lambda df: 100* df[fb.CROSSES_INTO_PENALTY_AREA.N + "_team"]
         / (
             df[fb.CROSSES_INTO_PENALTY_AREA.N + "_team"]
             + df[fb.PASSES_INTO_PENALTY_AREA.N + "_team"]
@@ -430,13 +430,13 @@ TeamTemplate = [
     ),
     TemplateAttribute(
         "Long Ball %",
-        lambda df: df[fb.PASSES_LONG.N + "_team"] / df[fb.PASSES.N + "_team"],
+        lambda df: 100*df[fb.PASSES_LONG.N + "_team"] / df[fb.PASSES.N + "_team"],
         True,
         columns_used=[fb.PASSES_LONG.N, fb.PASSES.N],
     ),
     TemplateAttribute(
-        "Possession",
-        lambda df: df[fb.TOUCHES.N + "_team"]
+        "Possession %",
+        lambda df:100* df[fb.TOUCHES.N + "_team"]
         / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"]),
         True,
         columns_used=[fb.TOUCHES.N],
