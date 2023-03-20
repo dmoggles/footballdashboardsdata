@@ -34,7 +34,10 @@ class PizzaDataSource(DataSource):
 
     def _specific_position_impl(self, data: pd.DataFrame) -> dict:
         data_value = {
-            f"{attrib.name}__value": attrib.calculation(data).apply(lambda x: f"{round(x, attrib.sig_figs)}") for attrib in self.get_template()
+            f"{attrib.name}__value": attrib.calculation(data).apply(
+                lambda x: f"{round(x, attrib.sig_figs)}"
+            )
+            for attrib in self.get_template()
         }
         data_rank = {
             attrib.name: attrib.calculation(data).rank(
@@ -331,13 +334,16 @@ class TeamPizzaDataSource(DataSource):
     def _specific_position_impl(self, data: pd.DataFrame) -> dict:
         data_rank = {
             attrib.name: attrib.calculation(data).rank(
-               pct=True, method="min", ascending=attrib.ascending_rank
-             )
-            #attrib.name: attrib.calculation(data)
+                pct=True, method="min", ascending=attrib.ascending_rank
+            )
+            # attrib.name: attrib.calculation(data)
             for attrib in self.get_template()
         }
         data_value = {
-            f"{attrib.name}__value": attrib.calculation(data).apply(lambda x: f"{round(x, attrib.sig_figs)}") for attrib in self.get_template()
+            f"{attrib.name}__value": attrib.calculation(data).apply(
+                lambda x: f"{round(x, attrib.sig_figs)}"
+            )
+            for attrib in self.get_template()
         }
 
         return {**data_rank, **data_value}
@@ -435,9 +441,15 @@ class TeamPizzaDataSource(DataSource):
         data_combined = data_combined.fillna(0)
         data_dict = self.get_data_dict(data_combined)
         output = pd.DataFrame(data_dict)
-        decorated_league_names = get_multiple_decorated_league_names_from_fb_names(leagues)
+        decorated_league_names = get_multiple_decorated_league_names_from_fb_names(
+            leagues
+        )
         output = output[output["Team"] == team]
-        output['All Leagues'] = ', '.join(decorated_league_names.values())
-        output['Decorated League'] = output['Competition'].apply(lambda x: decorated_league_names[x])
-        output['Decorated Team'] = get_decorated_team_name_from_fb_name(team, output['Competition'].tolist()[0])
+        output["All Leagues"] = ", ".join(decorated_league_names.values())
+        output["Decorated League"] = output["Competition"].apply(
+            lambda x: decorated_league_names[x]
+        )
+        output["Decorated Team"] = get_decorated_team_name_from_fb_name(
+            team, output["Competition"].tolist()[0]
+        )
         return output
