@@ -138,12 +138,12 @@ class FormationComposer433(FormationComposer):
             "LCB": ["CB"],
             "RCB": ["CB"],
             "RB": ["RB", "RWB"],
-            "DM": cls._get_dm,
+            "CDM": cls._get_dm,
             "LCM": ["CM", "AM", "DM"],
             "RCM": ["CM", "AM", "DM"],
             "LW": cls._get_lw,
             "RW": ["LW", "LM", "RM", "RW"],
-            "FW": ["FW"],
+            "ST": ["FW"],
         }
 
 
