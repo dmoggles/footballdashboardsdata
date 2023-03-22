@@ -3,11 +3,148 @@ from dbconnect.connector import Connection
 import datetime as dt
 import pandas as pd
 import numpy as np
-from typing import Dict
+from typing import Dict, List, Callable, Union
 from footballdashboardsdata.utils.queries import (
     get_decorated_league_name_from_fb_name,
     get_decorated_team_name_from_fb_name,
 )
+from abc import ABC, abstractmethod
+
+
+class FormationComposer(ABC):
+    @classmethod
+    def get(cls, formation_name: str):
+        formation_name = formation_name.replace(" ", "").replace("-", "")
+        try:
+            subclass = next(c for c in cls.__subclasses__() if c.__name__ == f"FormationComposer{formation_name}")
+            return subclass()
+        except StopIteration as e:
+            raise ValueError(f"Invalid formation name: {formation_name}") from e
+
+    @classmethod
+    @abstractmethod
+    def get_position_lists(cls) -> List[List[str]]:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_placement_functions(cls) -> Dict[str, Union[Callable[[pd.DataFrame], pd.DataFrame], List[str]]]:
+        pass
+
+    def select_team(self, data: pd.DataFrame) -> pd.DataFrame:
+        data["position"] = data["position"].apply(lambda x: x[0])
+        gk_pool = data.loc[data["position"] == "GK"]
+        selection = gk_pool.sort_values("total", ascending=False).head(1)
+        team_selection = selection.copy()
+        for position_list in self.get_position_lists():
+            position_pool = data.loc[
+                (data["position"].isin(position_list)) & (~data["player"].isin(team_selection["player"]))
+            ]
+            selection = position_pool.sort_values("total", ascending=False).head(1)
+            team_selection = pd.concat([team_selection, selection])
+        return team_selection
+
+    def place_team(self, data: pd.DataFrame) -> pd.DataFrame:
+        data = data.reset_index()
+        data["placement_position"] = ""
+        for position, position_f in self.get_placement_functions().items():
+            unplaced = data.loc[data["placement_position"] == ""]
+            if isinstance(position_f, list):
+                position_pool = unplaced.loc[unplaced["position"].isin(position_f)]
+            else:
+                position_pool = position_f(data)
+            selection = position_pool.sort_values("total", ascending=False).head(1)
+
+            data.loc[data["player"].isin(selection["player"]), "placement_position"] = position
+        return data
+
+
+class FormationComposer442(FormationComposer):
+    @classmethod
+    def get_position_lists(cls) -> List[List[str]]:
+        return [
+            ["LWB", "LB"],
+            ["CB"],
+            ["CB"],
+            ["RB", "RWB"],
+            ["LM", "LW"],
+            ["DM", "CM"],
+            ["CM", "AM"],
+            ["RM", "RW"],
+            ["FW"],
+            ["FW"],
+        ]
+
+    @classmethod
+    def get_placement_functions(cls) -> Dict[str, Union[Callable[[pd.DataFrame], pd.DataFrame], List[str]]]:
+        return {
+            "GK": ["GK"],
+            "LB": ["LB", "LWB"],
+            "LCB": ["CB"],
+            "RCB": ["CB"],
+            "RB": ["RB", "RWB"],
+            "LM": ["LM", "LW"],
+            "LCM": ["DM", "CM", "AM"],
+            "RCM": ["CM", "AM", "DM"],
+            "RM": ["RM", "RW"],
+            "LF": ["FW"],
+            "RF": ["FW"],
+        }
+
+
+class FormationComposer433(FormationComposer):
+    @staticmethod
+    def _get_dm(df: pd.DataFrame) -> pd.DataFrame:
+        dms = df.loc[df["position"].isin(["DM"])]
+        dms = dms.sort_values("defending", ascending=False)
+        if len(dms) > 0:
+            return dms.head(1)
+
+        all_cms = df.loc[df["position"].isin(["CM", "AM"])]
+        all_cms = all_cms.sort_values("defending", ascending=False)
+        return all_cms.head(1)
+
+    @staticmethod
+    def _get_lw(df: pd.DataFrame) -> pd.DataFrame:
+        lws = df.loc[df["position"].isin(["LW", "LM"])]
+
+        if len(lws) > 0:
+            return lws.head(1)
+
+        all_wingers = df.loc[df["position"].isin(["RW", "RM"])]
+
+        return all_wingers.head(1)
+
+    @classmethod
+    def get_position_lists(cls) -> List[List[str]]:
+        return [
+            ["LWB", "LB"],
+            ["CB"],
+            ["CB"],
+            ["RB", "RWB"],
+            ["DM", "CM"],
+            ["CM", "AM"],
+            ["DM", "CM", "AM"],
+            ["RM", "RW", "LM", "LW"],
+            ["RM", "RW", "LM", "LW"],
+            ["FW"],
+        ]
+
+    @classmethod
+    def get_placement_functions(cls) -> Dict[str, Union[Callable[[pd.DataFrame], pd.DataFrame], List[str]]]:
+        return {
+            "GK": ["GK"],
+            "LB": ["LB", "LWB"],
+            "LCB": ["CB"],
+            "RCB": ["CB"],
+            "RB": ["RB", "RWB"],
+            "DM": cls._get_dm,
+            "LCM": ["CM", "AM", "DM"],
+            "RCM": ["CM", "AM", "DM"],
+            "LW": cls._get_lw,
+            "RW": ["LW", "LM", "RM", "RW"],
+            "FW": ["FW"],
+        }
 
 
 class BestEleventDataSource(DataSource):
@@ -30,7 +167,11 @@ class BestEleventDataSource(DataSource):
     ]
 
     def _get_seasons_data(
-        self, league: str, season: int, start_date: dt.date = None, end_date: dt.date = None
+        self,
+        league: str,
+        season: int,
+        start_date: dt.date = None,
+        end_date: dt.date = None,
     ) -> pd.DataFrame:
         conn = Connection("M0neyMa$e")
         sql = f"""SELECT * FROM fbref 
@@ -207,44 +348,6 @@ class BestEleventDataSource(DataSource):
         else:
             return ""
 
-    def _generate_team_of_the_period(self, agg_rankings: pd.DataFrame) -> pd.DataFrame:
-        gk_pool = agg_rankings.loc[agg_rankings["agg_position"] == "GK"]
-        team_selection = gk_pool.sort_values("total", ascending=False).head(1)
-        fb_pool = agg_rankings.loc[agg_rankings["agg_position"] == "FB"]
-        fb_selection = fb_pool.sort_values("total", ascending=False).head(1)
-        team_selection = pd.concat([team_selection, fb_selection])
-        cb_pool = agg_rankings.loc[agg_rankings["agg_position"] == "CB"]
-        team_selection = pd.concat([team_selection, cb_pool.sort_values("total", ascending=False).head(2)])
-        fb_cb_pool = agg_rankings.loc[
-            (agg_rankings["agg_position"].isin(["FB", "CB"]))
-            & (~agg_rankings["player"].isin(team_selection["player"]))
-            & (~agg_rankings["position"].apply(lambda x: x[0]).isin([fb_selection["position"].iloc[0][0]]))
-        ]
-        team_selection = pd.concat([team_selection, fb_cb_pool.sort_values("total", ascending=False).head(1)])
-        midfielders = agg_rankings.loc[agg_rankings["agg_position"] == "MF"]
-        am_cm_pool = midfielders.loc[midfielders["position"].apply(lambda x: "AM" in x or "CM" in x)]
-        am_cm_selection = am_cm_pool.sort_values("total", ascending=False).head(1)
-        team_selection = pd.concat([team_selection, am_cm_selection])
-        dm_cm_pool = midfielders.loc[
-            (midfielders["position"].apply(lambda x: "DM" in x or "CM" in x))
-            & (~midfielders["player"].isin(am_cm_selection["player"]))
-        ]
-        dm_cm_selection = dm_cm_pool.sort_values("total", ascending=False).head(1)
-        team_selection = pd.concat([team_selection, dm_cm_selection])
-        mf_pool = midfielders.loc[~midfielders["player"].isin(team_selection["player"])]
-        team_selection = pd.concat([team_selection, mf_pool.sort_values("total", ascending=False).head(1)])
-        forwards = agg_rankings.loc[agg_rankings["agg_position"] == "FW"]
-        st_pool = forwards.loc[forwards["position"].apply(lambda x: x[0] == "FW")]
-        st_selection = st_pool.sort_values("total", ascending=False).head(1)
-        team_selection = pd.concat([team_selection, st_selection])
-        wing_pool = forwards.loc[forwards["position"].apply(lambda x: x[0] in ["LW", "RW", "LM", "RM"])]
-        wing_selection = wing_pool.sort_values("total", ascending=False).head(1)
-        team_selection = pd.concat([team_selection, wing_selection])
-        third_forward_pool = wing_pool.loc[~wing_pool["player"].isin(team_selection["player"])]
-        team_selection = pd.concat([team_selection, third_forward_pool.sort_values("total", ascending=False).head(1)])
-        team_selection["position"] = team_selection["position"].apply(lambda x: x[0])
-        return team_selection
-
     def _attach_best_attributes_totw(self, totw: pd.DataFrame, full_scores: pd.DataFrame) -> pd.DataFrame:
         total_stats = [
             "goals",
@@ -303,76 +406,6 @@ class BestEleventDataSource(DataSource):
 
         return totw
 
-    def _attach_position_placement(self, team: pd.DataFrame) -> pd.DataFrame:
-        position_placement = {
-            "GK": "",
-            "LB": "",
-            "LCB": "",
-            "RCB": "",
-            "RB": "",
-            "CDM": "",
-            "RCM": "",
-            "LCM": "",
-            "RW": "",
-            "FW": "",
-            "LW": "",
-        }
-        team["position"] = team["position"].apply(lambda x: x.replace("WB", "B"))
-        totw = team.sort_values("total", ascending=True)
-        position_placement["GK"] = totw.loc[totw["rank_position"] == "GK", "player"].iloc[0]
-
-        cbs = totw.loc[totw["rank_position"] == "CB", "player"].tolist()
-
-        if "RB" in totw["position"].tolist():
-            position_placement["RB"] = totw.loc[totw["position"] == "RB", "player"].iloc[0]
-        else:
-            position_placement["RB"] = cbs.pop()
-        if "LB" in totw["position"].tolist():
-            position_placement["LB"] = totw.loc[totw["position"] == "LB", "player"].iloc[0]
-        else:
-            position_placement["LB"] = cbs.pop()
-        position_placement["LCB"] = cbs.pop()
-        position_placement["RCB"] = cbs.pop()
-        cms = totw.loc[totw["position"].isin(["CM", "LM", "RM"]), "player"].tolist()
-        if "DM" in totw["position"].tolist():
-            position_placement["CDM"] = totw.loc[totw["position"] == "DM", "player"].iloc[0]
-        elif "CM" in totw["position"].tolist():
-            totw_sorted = totw.sort_values("defending", ascending=False)
-
-            position_placement["CDM"] = totw_sorted.loc[
-                totw_sorted["position"].isin(["LM", "RM", "CM"]), "player"
-            ].iloc[0]
-        else:
-            position_placement["CDM"] = cms.pop()
-        cms = totw.loc[
-            (totw["position"].isin(["CM", "AM", "LM", "RM", "DM"])) & (totw["player"] != position_placement["CDM"]),
-            "player",
-        ].tolist()
-
-        position_placement["LCM"] = cms.pop()
-        position_placement["RCM"] = cms.pop()
-        fws = totw.loc[totw["rank_position"] == "FW", "player"].tolist()
-        rws = totw.loc[totw["position"] == "RW", "player"].tolist()
-        lws = totw.loc[totw["position"] == "LW", "player"].tolist()
-        if len(lws) > 0:
-            position_placement["LW"] = lws.pop()
-        elif len(rws) > 1:
-            position_placement["LW"] = rws.pop()
-        else:
-            position_placement["LW"] = fws.pop()
-
-        if len(rws) > 0:
-            position_placement["RW"] = rws.pop()
-        elif len(lws) > 0:
-            position_placement["RW"] = lws.pop()
-        else:
-            position_placement["RW"] = fws.pop()
-        position_placement["ST"] = fws.pop()
-
-        position_placement = {v: k for k, v in position_placement.items()}
-        totw["placement_position"] = totw["player"].map(position_placement)
-        return totw
-
     def _attach_ranking(self, data, ranking_baseline_data):
         for i, row in data.iterrows():
             if row["position"] == "GK":
@@ -388,8 +421,15 @@ class BestEleventDataSource(DataSource):
                 data.loc[i, f"{stat}_ranking"] = len(comp[comp[stat] < row[stat]]) / len(comp)
 
     def impl_get_data(
-        self, league: str, season: int, start_date: dt.date = None, end_date: dt.date = None, tag: str = None
+        self,
+        league: str,
+        season: int,
+        start_date: dt.date = None,
+        end_date: dt.date = None,
+        tag: str = None,
+        formation: str = "442",
     ):
+        formation_composer = FormationComposer.get(formation)
         raw_data = self._get_seasons_data(league, season, start_date, end_date)
         shot_data = self._get_shot_data(league, season, start_date, end_date)
         self._attach_sub_on_sub_off(raw_data)
@@ -406,7 +446,6 @@ class BestEleventDataSource(DataSource):
             padj_full_scores.loc[i, "earned_score"] = r["earned_score"] * padj_factors[r["squad"]]
         data = self._pivot_ranking_data(padj_full_scores)
         data["matches"] = 1
-        # agg_full_scores = full_scores.groupby(['player','squad','data_attribute','data_category']).agg({'earned_score':'sum','value':'sum','position':lambda x: x.value_counts().index.tolist()[0]}).reset_index().sort_values(['player','earned_score'])
         data["agg_position"] = self._aggregated_position(data)
         aggregated = data.groupby(["player", "squad"]).agg(
             {
@@ -437,9 +476,10 @@ class BestEleventDataSource(DataSource):
         ]:
             aggregated[c] = aggregated[c] / np.sqrt(aggregated["matches"])
         aggregated.sort_values("total")
-        best_11 = self._generate_team_of_the_period(aggregated.reset_index())
+
+        best_11 = formation_composer.select_team(aggregated.reset_index())
         best_11 = self._attach_best_attributes_totw(best_11, full_scores)
-        best_11 = self._attach_position_placement(best_11)
+        best_11 = formation_composer.place_team(best_11)
         self._attach_ranking(best_11, aggregated)
         best_11["season"] = season
         best_11["league"] = league
@@ -447,4 +487,5 @@ class BestEleventDataSource(DataSource):
         best_11["start_date"] = start_date
         best_11["end_date"] = end_date
         best_11["tag"] = tag
+        best_11["formation"] = formation
         return best_11
