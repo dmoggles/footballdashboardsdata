@@ -87,8 +87,8 @@ class FormationComposer442(FormationComposer):
             "LCM": ["DM", "CM", "AM"],
             "RCM": ["CM", "AM", "DM"],
             "RM": ["RM", "RW"],
-            "LF": ["FW"],
-            "RF": ["FW"],
+            "LCF": ["FW"],
+            "RCF": ["FW"],
         }
 
 
