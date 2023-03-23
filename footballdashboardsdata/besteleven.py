@@ -92,6 +92,39 @@ class FormationComposer442(FormationComposer):
         }
 
 
+class FormationComposer4240(FormationComposer):
+    @classmethod
+    def get_position_lists(cls) -> List[List[str]]:
+        return [
+            ["LWB", "LB"],
+            ["CB"],
+            ["CB"],
+            ["RB", "RWB"],
+            ["LM", "LW"],
+            ["DM", "CM"],
+            ["CM", "AM"],
+            ["RM", "RW"],
+            ["FW"],
+            ["FW"],
+        ]
+
+    @classmethod
+    def get_placement_functions(cls) -> Dict[str, Union[Callable[[pd.DataFrame], pd.DataFrame], List[str]]]:
+        return {
+            "GK": ["GK"],
+            "LB": ["LB", "LWB"],
+            "LCB": ["CB"],
+            "RCB": ["CB"],
+            "RB": ["RB", "RWB"],
+            "LWF": ["LM", "LW"],
+            "LCDM": ["DM", "CM", "AM"],
+            "RCDM": ["CM", "AM", "DM"],
+            "RWF": ["RM", "RW"],
+            "LF": ["FW"],
+            "RF": ["FW"],
+        }
+
+
 class FormationComposer433(FormationComposer):
     @staticmethod
     def _get_dm(df: pd.DataFrame) -> pd.DataFrame:
