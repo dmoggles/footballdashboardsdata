@@ -248,6 +248,17 @@ class AMPizzaDataSource(PizzaDataSource):
     def get_comparison_positions(self) -> List[str]:
         return ["AM", "LW", "RW", "RM", "LM"]
 
+class AttackerCombinedPizzaDataSource(PizzaDataSource):
+    def get_template(self) -> List[TemplateAttribute]:
+        return AttackerTemplate
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "ATTPizza"
+
+    def get_comparison_positions(self) -> List[str]:
+        return ["AM", "LW", "RW", "RM", "LM",'FW']
+
 
 class GKPizzaDataSource(PizzaDataSource):
     def get_template(self) -> List[TemplateAttribute]:
