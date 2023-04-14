@@ -23,290 +23,236 @@ class TemplateAttribute:
     sig_figs: int = 1
 
 
+ASSISTS = TemplateAttribute(
+    "Assists",
+    lambda df: df[fb.ASSISTS.N],
+    True,
+    columns_used=[fb.ASSISTS.N],
+    sig_figs=2,
+)
+BLOCKS_PADJ = TemplateAttribute(
+    "PAdj Blocks",
+    lambda df: df[fb.BLOCKS.N],
+    True,
+    columns_used=[fb.BLOCKS.N],
+    possession_adjust=PossessionAdjustment.OUT_OF_POSS,
+)
+CLEARANCES_PADJ = TemplateAttribute(
+    "PAdj Clearances",
+    lambda df: df[fb.CLEARANCES.N],
+    True,
+    columns_used=[fb.CLEARANCES.N],
+    possession_adjust=PossessionAdjustment.OUT_OF_POSS,
+)
+CROSSES_COMPLETED = TemplateAttribute(
+    name="Completed Crosses",
+    calculation=lambda df: df[fb.CROSSES_INTO_PENALTY_AREA.N],
+    ascending_rank=True,
+    columns_used=[fb.CROSSES_INTO_PENALTY_AREA.N],
+    sig_figs=2,
+)
+CROSSES_PCT = TemplateAttribute(
+    name="Crosses %",
+    calculation=lambda df: (100 * df[fb.CROSSES_INTO_PENALTY_AREA.N] / df[fb.CROSSES.N]).fillna(0),
+    ascending_rank=True,
+    columns_used=[fb.CROSSES_INTO_PENALTY_AREA.N, fb.CROSSES.N],
+)
+DISPOSSESSED = TemplateAttribute(
+    "Dispossessed",
+    lambda df: df[fb.DISPOSSESSED.N],
+    False,
+    columns_used=[fb.DISPOSSESSED.N],
+)
+FOULS = TemplateAttribute("Fouls", lambda df: df[fb.FOULS.N], False, columns_used=[fb.FOULS.N])
+HEADERS_WON = TemplateAttribute(
+    "Headers Won",
+    lambda df: df[fb.AERIALS_WON.N],
+    True,
+    columns_used=[fb.AERIALS_WON.N],
+)
+HEADERS_WON_PCT = TemplateAttribute(
+    "Headers Won %",
+    lambda df: (100 * df[fb.AERIALS_WON.N] / (df[fb.AERIALS_WON.N] + df[fb.AERIALS_LOST.N])).fillna(0),
+    True,
+    columns_used=[fb.AERIALS_WON.N, fb.AERIALS_LOST.N],
+)
+INTERCEPTIONS_PADJ = TemplateAttribute(
+    "PAdj Interceptions",
+    lambda df: df[fb.INTERCEPTIONS.N],
+    True,
+    columns_used=[fb.INTERCEPTIONS.N],
+    possession_adjust=PossessionAdjustment.OUT_OF_POSS,
+)
+INTS_TACKLES = TemplateAttribute(
+    "Int+Tackles",
+    lambda df: df[fb.INTERCEPTIONS.N] + df[fb.TACKLES.N],
+    True,
+    columns_used=[fb.INTERCEPTIONS.N, fb.TACKLES.N],
+)
+KEY_PASSES = TemplateAttribute(
+    name="Key Passes",
+    calculation=lambda df: df[fb.ASSISTED_SHOTS.N],
+    ascending_rank=True,
+    columns_used=[fb.ASSISTED_SHOTS.N],
+)
+NON_PENALTY_GOALS = TemplateAttribute(
+    "Non-Penalty Goals",
+    lambda df: df[fb.NON_PENALTY_GOALS.N],
+    True,
+    columns_used=[fb.GOALS.N, fb.PENS_MADE.N],
+    sig_figs=2,
+)
+
+NPXG = TemplateAttribute("NPxG", lambda df: df[fb.NPXG.N], True, columns_used=[fb.NPXG.N], sig_figs=2)
+
+NPXG_PER_SHOT = TemplateAttribute(
+    "NPxG/Shot",
+    lambda df: df[fb.NPXG.N] / df[fb.SHOTS_TOTAL.N],
+    True,
+    columns_used=[fb.NPXG.N, fb.SHOTS_TOTAL.N],
+    sig_figs=2,
+)
+
+PCT_DRIBBLERS_TACKLED = TemplateAttribute(
+    "Pct of Dribblers Tackled",
+    lambda df: (100 * df[fb.TACKLES_VS_DRIBBLES_WON.N] / df[fb.TACKLES_VS_DRIBBLES.N]).fillna(0),
+    True,
+    columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
+)
+PASSING_PCT = TemplateAttribute(
+    name="Passing %",
+    calculation=lambda df: 100 * (df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
+    ascending_rank=True,
+    columns_used=[fb.PASSES_COMPLETED.N, fb.PASSES.N],
+)
+PASSES_PROGRESSIVE = TemplateAttribute(
+    "Progressive Passes",
+    lambda df: df[fb.PROGRESSIVE_PASSES.N],
+    True,
+    columns_used=[fb.PROGRESSIVE_PASSES.N],
+)
+PASSES_PROGRESSIVE_PCT = TemplateAttribute(
+    "Progressive Passes %",
+    lambda df: 100 * df[fb.PROGRESSIVE_PASSES.N] / df[fb.PASSES.N],
+    True,
+    columns_used=[fb.PROGRESSIVE_PASSES.N, fb.PASSES.N],
+)
+SCORING_CONTRIBUTIONS = TemplateAttribute(
+    name="Scoring Contributions",
+    calculation=lambda df: (df[fb.NON_PENALTY_GOALS.N] + df[fb.ASSISTS.N]),
+    ascending_rank=True,
+    columns_used=[fb.GOALS.N, fb.ASSISTS.N, fb.PENS_MADE.N],
+    sig_figs=2,
+)
+SHOOTING_PCT = TemplateAttribute(
+    "Shooting %",
+    lambda df: (100 * df[fb.NON_PENALTY_GOALS.N] / df[fb.SHOTS_TOTAL.N]).fillna(0),
+    True,
+    columns_used=[fb.GOALS.N, fb.PENS_MADE.N, fb.SHOTS_TOTAL.N],
+)
+SHOTS = TemplateAttribute("Shots", lambda df: df[fb.SHOTS_TOTAL.N], True, columns_used=[fb.SHOTS_TOTAL.N])
+
+SHOTS_CREATED_OPEN_PLAY = TemplateAttribute(
+    "Open Play Shots Created",
+    lambda df: df[fb.SCA.N] - df[fb.SCA_PASSES_DEAD.N],
+    True,
+    columns_used=[fb.SCA.N, fb.SCA_PASSES_DEAD.N],
+)
+
+SUCCESSFUL_DRIBBLES = TemplateAttribute(
+    "Successful Dribbles",
+    lambda df: df[fb.DRIBBLES_COMPLETED.N],
+    True,
+    columns_used=[fb.DRIBBLES_COMPLETED.N],
+)
+TACKLES_PADJ = TemplateAttribute(
+    "PAdj Tackles",
+    lambda df: df[fb.TACKLES.N],
+    True,
+    columns_used=[fb.TACKLES.N],
+    possession_adjust=PossessionAdjustment.OUT_OF_POSS,
+)
+THROUGHBALLS = TemplateAttribute(
+    name="Throughballs",
+    calculation=lambda df: df[fb.THROUGH_BALLS.N],
+    ascending_rank=True,
+    columns_used=[fb.THROUGH_BALLS.N],
+    sig_figs=2,
+)
+
+TURNOVERS = TemplateAttribute(
+    name="Turnovers",
+    calculation=lambda df: df[fb.MISCONTROLS.N]
+    + df[fb.DISPOSSESSED.N]
+    + df[fb.PASSES.N]
+    - df[fb.PASSES_COMPLETED.N]
+    - (df[fb.CROSSES.N] - df[fb.CROSSES_INTO_PENALTY_AREA.N]),
+    ascending_rank=False,
+    columns_used=[
+        fb.MISCONTROLS.N,
+        fb.DISPOSSESSED.N,
+        fb.PASSES.N,
+        fb.PASSES_COMPLETED.N,
+        fb.CROSSES.N,
+        fb.CROSSES_INTO_PENALTY_AREA.N,
+    ],
+)
+XA = TemplateAttribute("xA", lambda df: df[fb.XA.N], True, columns_used=[fb.XA.N], sig_figs=2)
+
+
 MFTemplate = [
-    TemplateAttribute(
-        name="Passing %",
-        calculation=lambda df: 100
-        * (df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
-        ascending_rank=True,
-        columns_used=[fb.PASSES_COMPLETED.N, fb.PASSES.N],
-    ),
-    TemplateAttribute(
-        name="Key Passes",
-        calculation=lambda df: df[fb.ASSISTED_SHOTS.N],
-        ascending_rank=True,
-        columns_used=[fb.ASSISTED_SHOTS.N],
-    ),
-    TemplateAttribute(
-        name="Throughballs",
-        calculation=lambda df: df[fb.THROUGH_BALLS.N],
-        ascending_rank=True,
-        columns_used=[fb.THROUGH_BALLS.N],
-        sig_figs=2,
-    ),
-    TemplateAttribute(
-        name="Scoring Contributions",
-        calculation=lambda df: (df[fb.NON_PENALTY_GOALS.N] + df[fb.ASSISTS.N]),
-        ascending_rank=True,
-        columns_used=[fb.GOALS.N, fb.ASSISTS.N, fb.PENS_MADE.N],
-        sig_figs=2,
-    ),
-    TemplateAttribute(
-        "Successful Dribbles",
-        lambda df: df[fb.DRIBBLES_COMPLETED.N],
-        True,
-        columns_used=[fb.DRIBBLES_COMPLETED.N],
-    ),
-    TemplateAttribute(
-        "Dispossessed",
-        lambda df: df[fb.DISPOSSESSED.N],
-        False,
-        columns_used=[fb.DISPOSSESSED.N],
-    ),
-    TemplateAttribute(
-        "Fouls", lambda df: df[fb.FOULS.N], False, columns_used=[fb.FOULS.N]
-    ),
-    TemplateAttribute(
-        "Pct of Dribblers Tackled",
-        lambda df: (
-            100 * df[fb.TACKLES_VS_DRIBBLES_WON.N] / df[fb.TACKLES_VS_DRIBBLES.N]
-        ).fillna(0),
-        True,
-        columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
-    ),
-    TemplateAttribute(
-        "PAdj Tackles",
-        lambda df: df[fb.TACKLES.N],
-        True,
-        columns_used=[fb.TACKLES.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS,
-    ),
-    TemplateAttribute(
-        "PAdj Interceptions",
-        lambda df: df[fb.INTERCEPTIONS.N],
-        True,
-        columns_used=[fb.INTERCEPTIONS.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS,
-    ),
-    TemplateAttribute(
-        "Progressive Passes",
-        lambda df: df[fb.PROGRESSIVE_PASSES.N],
-        True,
-        columns_used=[fb.PROGRESSIVE_PASSES.N],
-    ),
+    PASSING_PCT,
+    KEY_PASSES,
+    THROUGHBALLS,
+    SCORING_CONTRIBUTIONS,
+    SUCCESSFUL_DRIBBLES,
+    TURNOVERS,
+    FOULS,
+    PCT_DRIBBLERS_TACKLED,
+    TACKLES_PADJ,
+    INTERCEPTIONS_PADJ,
+    PASSES_PROGRESSIVE,
 ]
 
 CBTemplate = [
-    TemplateAttribute(
-        name="Passing %",
-        calculation=lambda df: 100
-        * (df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
-        ascending_rank=True,
-        columns_used=[fb.PASSES_COMPLETED.N, fb.PASSES.N],
-    ),
-    TemplateAttribute(
-        "Pct of Dribblers Tackled",
-        lambda df: 100
-        * (df[fb.TACKLES_VS_DRIBBLES_WON.N] / df[fb.TACKLES_VS_DRIBBLES.N]).fillna(0),
-        True,
-        columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
-    ),
-    TemplateAttribute(
-        "PAdj Tackles",
-        lambda df: df[fb.TACKLES.N],
-        True,
-        columns_used=[fb.TACKLES.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS,
-    ),
-    TemplateAttribute(
-        "PAdj Interceptions",
-        lambda df: df[fb.INTERCEPTIONS.N],
-        True,
-        columns_used=[fb.INTERCEPTIONS.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS,
-    ),
-    TemplateAttribute(
-        "PAdj Blocks",
-        lambda df: df[fb.BLOCKS.N],
-        True,
-        columns_used=[fb.BLOCKS.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS,
-    ),
-    TemplateAttribute(
-        "PAdj Clearances",
-        lambda df: df[fb.CLEARANCES.N],
-        True,
-        columns_used=[fb.CLEARANCES.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS,
-    ),
-    TemplateAttribute(
-        "Fouls", lambda df: df[fb.FOULS.N], False, columns_used=[fb.FOULS.N]
-    ),
-    TemplateAttribute(
-        "Headers Won",
-        lambda df: df[fb.AERIALS_WON.N],
-        True,
-        columns_used=[fb.AERIALS_WON.N],
-    ),
-    TemplateAttribute(
-        "Headers Won %",
-        lambda df: (
-            100 * df[fb.AERIALS_WON.N] / (df[fb.AERIALS_WON.N] + df[fb.AERIALS_LOST.N])
-        ).fillna(0),
-        True,
-        columns_used=[fb.AERIALS_WON.N, fb.AERIALS_LOST.N],
-    ),
-    TemplateAttribute(
-        "Progressive Passes",
-        lambda df: df[fb.PROGRESSIVE_PASSES.N],
-        True,
-        columns_used=[fb.PROGRESSIVE_PASSES.N],
-    ),
-    TemplateAttribute(
-        "Progressive Passes %",
-        lambda df: 100 * df[fb.PROGRESSIVE_PASSES.N] / df[fb.PASSES.N],
-        True,
-        columns_used=[fb.PROGRESSIVE_PASSES.N, fb.PASSES.N],
-    ),
+    PASSING_PCT,
+    PCT_DRIBBLERS_TACKLED,
+    TACKLES_PADJ,
+    INTERCEPTIONS_PADJ,
+    BLOCKS_PADJ,
+    CLEARANCES_PADJ,
+    FOULS,
+    HEADERS_WON,
+    HEADERS_WON_PCT,
+    PASSES_PROGRESSIVE,
+    PASSES_PROGRESSIVE_PCT,
 ]
 FBTemplate = [
-    TemplateAttribute(
-        name="Passing %",
-        calculation=lambda df: 100
-        * (df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
-        ascending_rank=True,
-        columns_used=[fb.PASSES_COMPLETED.N, fb.PASSES.N],
-    ),
-    TemplateAttribute(
-        "PAdj Tackles",
-        lambda df: df[fb.TACKLES.N],
-        True,
-        columns_used=[fb.TACKLES.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS,
-    ),
-    TemplateAttribute(
-        "PAdj Interceptions",
-        lambda df: df[fb.INTERCEPTIONS.N],
-        True,
-        columns_used=[fb.INTERCEPTIONS.N],
-        possession_adjust=PossessionAdjustment.OUT_OF_POSS,
-    ),
-    TemplateAttribute(
-        name="Key Passes",
-        calculation=lambda df: df[fb.ASSISTED_SHOTS.N],
-        ascending_rank=True,
-        columns_used=[fb.ASSISTED_SHOTS.N],
-    ),
-    TemplateAttribute(
-        name="Completed Crosses",
-        calculation=lambda df: df[fb.CROSSES_INTO_PENALTY_AREA.N],
-        ascending_rank=True,
-        columns_used=[fb.CROSSES_INTO_PENALTY_AREA.N],
-        sig_figs=2
-    ),
-    TemplateAttribute(
-        name="Crosses %",
-        calculation=lambda df: (
-            100 * df[fb.CROSSES_INTO_PENALTY_AREA.N] / df[fb.CROSSES.N]
-        ).fillna(0),
-        ascending_rank=True,
-        columns_used=[fb.CROSSES_INTO_PENALTY_AREA.N, fb.CROSSES.N],
-    ),
-    TemplateAttribute(
-        "Successful Dribbles",
-        lambda df: df[fb.DRIBBLES_COMPLETED.N],
-        True,
-        columns_used=[fb.DRIBBLES_COMPLETED.N],
-    ),
-    TemplateAttribute(
-        "Dispossessed",
-        lambda df: df[fb.DISPOSSESSED.N],
-        False,
-        columns_used=[fb.DISPOSSESSED.N],
-    ),
-    TemplateAttribute(
-        name="Scoring Contributions",
-        calculation=lambda df: (df[fb.NON_PENALTY_GOALS.N] + df[fb.ASSISTS.N]),
-        ascending_rank=True,
-        columns_used=[fb.GOALS.N, fb.ASSISTS.N, fb.PENS_MADE.N],
-        sig_figs=2,
-    ),
-    TemplateAttribute(
-        "Pct of Dribblers Tackled",
-        lambda df: 100
-        * (df[fb.TACKLES_VS_DRIBBLES_WON.N] / df[fb.TACKLES_VS_DRIBBLES.N]).fillna(0),
-        True,
-        columns_used=[fb.TACKLES_VS_DRIBBLES_WON.N, fb.TACKLES_VS_DRIBBLES.N],
-    ),
-    TemplateAttribute(
-        "Fouls", lambda df: df[fb.FOULS.N], False, columns_used=[fb.FOULS.N]
-    ),
+    PASSING_PCT,
+    TACKLES_PADJ,
+    INTERCEPTIONS_PADJ,
+    KEY_PASSES,
+    CROSSES_COMPLETED,
+    CROSSES_PCT,
+    SUCCESSFUL_DRIBBLES,
+    DISPOSSESSED,
+    SCORING_CONTRIBUTIONS,
+    PCT_DRIBBLERS_TACKLED,
+    FOULS,
 ]
 AttackerTemplate = [
-    TemplateAttribute(
-        "Non-Penalty Goals",
-        lambda df: df[fb.NON_PENALTY_GOALS.N],
-        True,
-        columns_used=[fb.GOALS.N, fb.PENS_MADE.N],
-        sig_figs=2,
-    ),
-    TemplateAttribute(
-        "Shots", lambda df: df[fb.SHOTS_TOTAL.N], True, columns_used=[fb.SHOTS_TOTAL.N]
-    ),
-    TemplateAttribute(
-        "Shooting %",
-        lambda df: (100 * df[fb.NON_PENALTY_GOALS.N] / df[fb.SHOTS_TOTAL.N]).fillna(0),
-        True,
-        columns_used=[fb.GOALS.N, fb.PENS_MADE.N, fb.SHOTS_TOTAL.N],
-    ),
-    TemplateAttribute(
-        "Passing %",
-        lambda df: (100 * df[fb.PASSES_COMPLETED.N] / df[fb.PASSES.N]).fillna(0),
-        True,
-        columns_used=[fb.PASSES_COMPLETED.N, fb.PASSES.N],
-    ),
-    TemplateAttribute(
-        "Assists",
-        lambda df: df[fb.ASSISTS.N],
-        True,
-        columns_used=[fb.ASSISTS.N],
-        sig_figs=2,
-    ),
-    TemplateAttribute("xA", lambda df: df[fb.XA.N], True, columns_used=[fb.XA.N],sig_figs=2),
-    TemplateAttribute(
-        "Open Play Shots Created",
-        lambda df: df[fb.SCA.N] - df[fb.SCA_PASSES_DEAD.N],
-        True,
-        columns_used=[fb.SCA.N, fb.SCA_PASSES_DEAD.N],
-    ),
-    TemplateAttribute(
-        "Int+Tackles",
-        lambda df: df[fb.INTERCEPTIONS.N] + df[fb.TACKLES.N],
-        True,
-        columns_used=[fb.INTERCEPTIONS.N, fb.TACKLES.N],
-    ),
-    TemplateAttribute(
-        "Dispossessed",
-        lambda df: df[fb.DISPOSSESSED.N],
-        False,
-        columns_used=[fb.DISPOSSESSED.N],
-    ),
-    TemplateAttribute(
-        "Successful Dribbles",
-        lambda df: df[fb.DRIBBLES_COMPLETED.N],
-        True,
-        columns_used=[fb.DRIBBLES_COMPLETED.N],
-    ),
-    TemplateAttribute(
-        "NPxG", lambda df: df[fb.NPXG.N], True, columns_used=[fb.NPXG.N], sig_figs=2
-    ),
-    TemplateAttribute(
-        "NPxG/Shot",
-        lambda df: df[fb.NPXG.N] / df[fb.SHOTS_TOTAL.N],
-        True,
-        columns_used=[fb.NPXG.N, fb.SHOTS_TOTAL.N],
-        sig_figs=2,
-    ),
+    NON_PENALTY_GOALS,
+    SHOTS,
+    SHOOTING_PCT,
+    PASSING_PCT,
+    ASSISTS,
+    XA,
+    SHOTS_CREATED_OPEN_PLAY,
+    INTS_TACKLES,
+    TURNOVERS,
+    SUCCESSFUL_DRIBBLES,
+    NPXG,
+    NPXG_PER_SHOT,
 ]
 
 GoalkeeperTemplate = [
@@ -323,9 +269,7 @@ GoalkeeperTemplate = [
         True,
         columns_used=[fb.SHOTS_ON_TARGET_AGAINST.N, fb.SAVES.N],
     ),
-    TemplateAttribute(
-        "Saves", lambda df: df[fb.SAVES.N], True, columns_used=[fb.SAVES.N]
-    ),
+    TemplateAttribute("Saves", lambda df: df[fb.SAVES.N], True, columns_used=[fb.SAVES.N]),
     TemplateAttribute(
         "PSxG-Goals Conceded",
         lambda df: df[fb.PSXG_GK.N] - df[fb.GOALS_AGAINST_GK.N],
@@ -365,8 +309,7 @@ GoalkeeperTemplate = [
     ),
     TemplateAttribute(
         "Long Pass % Completed",
-        lambda df: 100
-        * (df[fb.PASSES_COMPLETED_LONG.N] / df[fb.PASSES_LONG.N]).fillna(0),
+        lambda df: 100 * (df[fb.PASSES_COMPLETED_LONG.N] / df[fb.PASSES_LONG.N]).fillna(0),
         False,
         columns_used=[fb.PASSES_COMPLETED_LONG.N, fb.PASSES_LONG.N],
     ),
@@ -457,9 +400,7 @@ TeamTemplate = [
     ),
     TemplateAttribute(
         "Possession %",
-        lambda df: 100
-        * df[fb.TOUCHES.N + "_team"]
-        / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"]),
+        lambda df: 100 * df[fb.TOUCHES.N + "_team"] / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"]),
         True,
         columns_used=[fb.TOUCHES.N],
     ),
@@ -467,10 +408,7 @@ TeamTemplate = [
         "PAdj Final 3rd Tackles",
         lambda df: df[fb.TACKLES_ATT_3RD.N + "_team"]
         / df["matches"]
-        / (
-            df[fb.TOUCHES.N + "_opp"]
-            / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"])
-        )
+        / (df[fb.TOUCHES.N + "_opp"] / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"]))
         * 0.5,
         True,
         columns_used=[fb.TACKLES_ATT_3RD.N, fb.TOUCHES.N],
@@ -479,10 +417,7 @@ TeamTemplate = [
         "PAdj Fouls Committed",
         lambda df: df[fb.FOULS.N + "_team"]
         / df["matches"]
-        / (
-            df[fb.TOUCHES.N + "_opp"]
-            / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"])
-        )
+        / (df[fb.TOUCHES.N + "_opp"] / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"]))
         * 0.5,
         False,
         columns_used=[fb.FOULS.N, fb.TOUCHES.N],
@@ -491,10 +426,7 @@ TeamTemplate = [
         "PAdj Dribbles",
         lambda df: df[fb.DRIBBLES.N + "_team"]
         / df["matches"]
-        / (
-            df[fb.TOUCHES.N + "_team"]
-            / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"])
-        )
+        / (df[fb.TOUCHES.N + "_team"] / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"]))
         * 0.5,
         True,
         columns_used=[fb.DRIBBLES.N, fb.TOUCHES.N],
@@ -503,12 +435,10 @@ TeamTemplate = [
         "PAdj Offsides",
         lambda df: df[fb.OFFSIDES.N + "_team"]
         / df["matches"]
-        / (
-            df[fb.TOUCHES.N + "_team"]
-            / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"])
-        )
+        / (df[fb.TOUCHES.N + "_team"] / (df[fb.TOUCHES.N + "_opp"] + df[fb.TOUCHES.N + "_team"]))
         * 0.5,
         False,
         columns_used=[fb.OFFSIDES.N, fb.TOUCHES.N],
     ),
 ]
+CreativityTemplate = [ASSISTS, XA]
