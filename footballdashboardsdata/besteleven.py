@@ -269,9 +269,9 @@ class BestEleventDataSource(DataSource):
         conn = Connection("M0neyMa$e")
         data = conn.query("SELECT * FROM power_ranking_reference")
         if multi_leg:
-            data.loc[data["data_attributes"] == "winning_goals", "score"] == 0
-            data.loc[data["data_attributes"] == "opening_goals", "score"] = 0
-            data.loc[data["data_attributes"] == "equalising_goals", "score"] = 0
+            data.loc[data["data_attribute"] == "winning_goals", "score"] == 0
+            data.loc[data["data_attribute"] == "opening_goals", "score"] = 0
+            data.loc[data["data_attribute"] == "equalising_goals", "score"] = 0
         return data
 
     def _transform_position(self, position: str):
