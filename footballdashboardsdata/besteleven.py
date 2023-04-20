@@ -92,7 +92,7 @@ class FormationComposer442(FormationComposer):
         }
 
 
-class FormationComposer4240(FormationComposer):
+class FormationComposer424(FormationComposer):
     @classmethod
     def get_position_lists(cls) -> List[List[str]]:
         return [
@@ -265,9 +265,13 @@ class BestEleventDataSource(DataSource):
             axis=1,
         )
 
-    def _get_scores(self) -> pd.DataFrame:
+    def _get_scores(self, multi_leg: bool = False) -> pd.DataFrame:
         conn = Connection("M0neyMa$e")
         data = conn.query("SELECT * FROM power_ranking_reference")
+        if multi_leg:
+            data.loc[data["data_attributes"] == "winning_goals", "score"] == 0
+            data.loc[data["data_attributes"] == "opening_goals", "score"] = 0
+            data.loc[data["data_attributes"] == "equalising_goals", "score"] = 0
         return data
 
     def _transform_position(self, position: str):
@@ -461,13 +465,14 @@ class BestEleventDataSource(DataSource):
         end_date: dt.date = None,
         tag: str = None,
         formation: str = "442",
+        multi_leg: bool = False,
     ):
         formation_composer = FormationComposer.get(formation)
         raw_data = self._get_seasons_data(league, season, start_date, end_date)
         shot_data = self._get_shot_data(league, season, start_date, end_date)
         self._attach_sub_on_sub_off(raw_data)
         self._attach_team_goal_conceded(raw_data, shot_data)
-        scores = self._get_scores()
+        scores = self._get_scores(multi_leg=multi_leg)
         full_scores = self._attach_scores(raw_data, scores)
         padj_full_scores = full_scores.copy()
         padj_factors = self._possession_adjust_factors(raw_data)
