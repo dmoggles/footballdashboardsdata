@@ -513,6 +513,7 @@ class BestEleventDataSource(DataSource):
             "distribution",
         ]:
             aggregated[c] = aggregated[c] / np.sqrt(aggregated["matches"])
+        aggregated = aggregated.loc[aggregated["matches"] >= aggregated["matches"].max() / 2]
         aggregated.sort_values("total")
 
         best_11 = formation_composer.select_team(aggregated.reset_index())
