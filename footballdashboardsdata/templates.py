@@ -4,8 +4,6 @@ import enum
 import pandas as pd
 from footmav import fb
 
-enum.Enum
-
 
 class PossessionAdjustment:
     NONE = 0
@@ -197,7 +195,36 @@ TURNOVERS = TemplateAttribute(
         fb.CROSSES_INTO_PENALTY_AREA.N,
     ],
 )
+
 XA = TemplateAttribute("xA", lambda df: df[fb.XA.N], True, columns_used=[fb.XA.N], sig_figs=2)
+
+PROGRESSIVE_PASSES_RECEIVED = TemplateAttribute(
+    "Progressive Passes Received",
+    lambda df: df[fb.PROGRESSIVE_PASSES_RECEIVED.N],
+    True,
+    columns_used=[fb.PROGRESSIVE_PASSES_RECEIVED.N],
+)
+
+FOULS_WON = TemplateAttribute(
+    "Fouls Won",
+    lambda df: df[fb.FOULED.N],
+    True,
+    columns_used=[fb.FOULED.N],
+)
+
+TOUCHES_IN_PEN_AREA = TemplateAttribute(
+    "Touches in Penalty Area",
+    lambda df: df[fb.TOUCHES_ATT_PEN_AREA.N],
+    True,
+    columns_used=[fb.TOUCHES_ATT_PEN_AREA.N],
+)
+
+HEADED_SHOTS = TemplateAttribute(
+    "Headed Shots",
+    lambda df: df[fb.HEADED_SHOTS.N],
+    True,
+    columns_used=[fb.HEADED_SHOTS.N],
+)
 
 
 MFTemplate = [
@@ -252,6 +279,21 @@ AttackerTemplate = [
     TURNOVERS,
     SUCCESSFUL_DRIBBLES,
     NPXG,
+    NPXG_PER_SHOT,
+]
+
+TargetmanTemplate = [
+    NON_PENALTY_GOALS,
+    NPXG,
+    HEADERS_WON,
+    HEADERS_WON_PCT,
+    HEADED_SHOTS,
+    PROGRESSIVE_PASSES_RECEIVED,
+    PASSES_PROGRESSIVE,
+    PASSING_PCT,
+    FOULS_WON,
+    TOUCHES_IN_PEN_AREA,
+    SHOTS_CREATED_OPEN_PLAY,
     NPXG_PER_SHOT,
 ]
 

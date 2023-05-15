@@ -12,6 +12,7 @@ from footballdashboardsdata.templates import (
     AttackerTemplate,
     GoalkeeperTemplate,
     TeamTemplate,
+    TargetmanTemplate,
     TemplateAttribute,
     PossessionAdjustment,
 )
@@ -101,6 +102,7 @@ class PizzaDataSource(DataSource):
         SELECT `{'`,`'.join(all_columns)}` 
         FROM fbref WHERE comp in ({league_str}) AND season = {season}
         """
+
         orig_df = Connection("M0neyMa$e").query(query)
         gender = orig_df["gender"].iloc[0]
 
@@ -259,6 +261,18 @@ class GKPizzaDataSource(PizzaDataSource):
 
     def get_comparison_positions(self) -> List[str]:
         return ["GK"]
+
+
+class TargetmanDataSource(PizzaDataSource):
+    def get_template(self) -> List[TemplateAttribute]:
+        return TargetmanTemplate
+
+    @classmethod
+    def get_name(cls) -> str:
+        return "TargetmanPizza"
+
+    def get_comparison_positions(self) -> List[str]:
+        return ["FW"]
 
 
 class TeamPizzaDataSource(DataSource):
