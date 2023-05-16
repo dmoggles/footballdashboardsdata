@@ -84,8 +84,8 @@ class FormationComposer442(FormationComposer):
             "RCB": ["CB"],
             "RB": ["RB", "RWB"],
             "LM": ["LM", "LW"],
-            "LCM": ["DM", "CM", "AM"],
-            "RCM": ["CM", "AM", "DM"],
+            "LDM": ["DM", "CM", "AM"],
+            "RDM": ["CM", "AM", "DM"],
             "RM": ["RM", "RW"],
             "LCF": ["FW"],
             "RCF": ["FW"],
@@ -197,6 +197,7 @@ class BestEleventDataSource(DataSource):
         "minutes",
         "position",
         "week",
+        "dob",
     ]
 
     def _get_seasons_data(
@@ -205,6 +206,7 @@ class BestEleventDataSource(DataSource):
         season: int,
         start_date: dt.date = None,
         end_date: dt.date = None,
+        # dob: dt.date = None,
     ) -> pd.DataFrame:
         conn = Connection("M0neyMa$e")
         sql = f"""SELECT * FROM fbref 
@@ -215,6 +217,8 @@ class BestEleventDataSource(DataSource):
             sql += f"AND date >= '{start_date}'"
         if end_date:
             sql += f"AND date <= '{end_date}'"
+        # if dob:
+        #    sql += f"AND dob >= '{dob}'"
 
         data = conn.query(sql)
         data["position"] = data["position"].apply(lambda x: x.split(",")[0])
@@ -322,6 +326,9 @@ class BestEleventDataSource(DataSource):
         )
         data["earned_score"] = data["value"] * data["score"]
         data = data[data["earned_score"] != 0]
+        data["dob"] = data["dob"].apply(
+            lambda x: x.to_pydatetime().date() if isinstance(x, pd.Timestamp) else dt.date(1900, 1, 1)
+        )
         return data[
             [
                 "player",
@@ -335,6 +342,7 @@ class BestEleventDataSource(DataSource):
                 "position",
                 "rank_position",
                 "week",
+                "dob",
                 "data_attribute",
                 "data_category",
                 "value",
@@ -466,6 +474,7 @@ class BestEleventDataSource(DataSource):
         tag: str = None,
         formation: str = "442",
         multi_leg: bool = False,
+        dob: dt.date = None,
     ):
         formation_composer = FormationComposer.get(formation)
         raw_data = self._get_seasons_data(league, season, start_date, end_date)
@@ -485,6 +494,7 @@ class BestEleventDataSource(DataSource):
         data = self._pivot_ranking_data(padj_full_scores)
         data["matches"] = 1
         data["agg_position"] = self._aggregated_position(data)
+
         aggregated = data.groupby(["player", "squad"]).agg(
             {
                 "minutes": "sum",
@@ -500,8 +510,10 @@ class BestEleventDataSource(DataSource):
                 "position": lambda x: x.value_counts().index.tolist()[0:1],
                 "agg_position": self._find_position_fit,
                 "rank_position": lambda x: x.value_counts().index.tolist()[0],
+                "dob": "max",
             }
         )
+
         for c in [
             "defending",
             "finishing",
@@ -515,8 +527,11 @@ class BestEleventDataSource(DataSource):
             aggregated[c] = aggregated[c] / np.sqrt(aggregated["matches"])
         aggregated = aggregated.loc[aggregated["matches"] >= aggregated["matches"].max() / 2]
         aggregated.sort_values("total")
-
-        best_11 = formation_composer.select_team(aggregated.reset_index())
+        if dob:
+            aggregated_select = aggregated.loc[aggregated["dob"] >= dob]
+        else:
+            aggregated_select = aggregated
+        best_11 = formation_composer.select_team(aggregated_select.reset_index())
         best_11 = self._attach_best_attributes_totw(best_11, full_scores)
         best_11 = formation_composer.place_team(best_11)
         self._attach_ranking(best_11, aggregated)
