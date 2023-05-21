@@ -153,7 +153,8 @@ class PizzaDataSource(DataSource):
                 )
             ],
         ).df
-        if player_name not in df[fb.PLAYER.N].unique():
+        if df.loc[(df[fb.PLAYER.N] == player_name) &(df[fb.TEAM.N]==team)].shape[0] == 0:
+        #if player_name not in df[fb.PLAYER.N].unique():
             df_player = transformed_data.pipe(filter, [Filter(fb.PLAYER, player_name, filters.EQ)]).df
             df = pd.concat([df, df_player])
 
