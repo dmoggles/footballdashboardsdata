@@ -33,3 +33,29 @@ class PassingNetworkFunnel(Funnel):
 
         data["filters"] = "\n".join(filters)
         return data
+
+
+class SingleTeamMatchFunnel(Funnel):
+
+    @classmethod
+    def apply(
+        cls, df:pd.DataFrame,team:str
+    )->pd.DataFrame:
+        data = df.copy()
+        data = data.loc[(data["team"] == team)]
+        non_carry_events = df.loc[df["event_type"] != EventType.Carry]
+        opp_data = non_carry_events.loc[(non_carry_events["team"] != team)]
+        data['starting_opponent_formation']=opp_data['formation'].iloc[0]
+        return data
+    
+
+class PlayerPassMatchFunnel(SingleTeamMatchFunnel):
+    @classmethod
+    def get_name(cls) -> str:
+        return "match_passes"
+
+
+class PlayerDefensiveMatchFunnel(SingleTeamMatchFunnel):
+    @classmethod
+    def get_name(cls) -> str:
+        return "match_defensive_actions"

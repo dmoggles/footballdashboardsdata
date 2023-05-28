@@ -4,6 +4,23 @@ from footballdashboardsdata.utils.subclassing import get_all_subclasses
 from dbconnect.connector import Connection
 
 
+def attach_positional_data(conn, data):
+        position_df = conn.query(
+            "SELECT * FROM football_data.whoscored_positions"
+        )
+        position_df["formation_name"] = position_df["formation_name"].apply(
+            lambda x: x.replace("-", "")
+        )
+        data = pd.merge(
+            data,
+            position_df,
+            left_on=["formation", "position"],
+            right_on=["formation_name", "position"],
+            suffixes=("", "_"),
+            how="left",
+        )
+        return data
+
 def get_dataframe_for_match(match_id: int, conn: Connection):
     query1 = f"""
     SELECT W.*,
@@ -79,6 +96,7 @@ def get_dataframe_for_match(match_id: int, conn: Connection):
     data = pd.concat([data1, data2])
     data["sub_id"] = data["sub_id"].fillna(1)
     data = data.sort_values(["period", "minute", "second", "eventId", "sub_id"])
+    data=attach_positional_data(conn, data)
     return data
 
 

@@ -1,0 +1,1 @@
+from footballdashboardsdata.funnels.passing_network_data import PassingNetworkFunnel
