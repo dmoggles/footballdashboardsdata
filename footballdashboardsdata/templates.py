@@ -226,6 +226,12 @@ HEADED_SHOTS = TemplateAttribute(
     columns_used=[fb.HEADED_SHOTS.N],
 )
 
+CARRY_PROGRESSIVE_DISTANCE = TemplateAttribute(
+    "Progressive Carry Distance",
+    lambda df: df[fb.CARRY_PROGRESSIVE_DISTANCE.N],
+    True,
+    columns_used=[fb.CARRY_PROGRESSIVE_DISTANCE.N],
+)
 
 MFTemplate = [
     PASSING_PCT,
@@ -233,6 +239,7 @@ MFTemplate = [
     THROUGHBALLS,
     SCORING_CONTRIBUTIONS,
     SUCCESSFUL_DRIBBLES,
+    CARRY_PROGRESSIVE_DISTANCE,
     TURNOVERS,
     FOULS,
     HEADERS_WON_PCT,
@@ -263,6 +270,7 @@ FBTemplate = [
     CROSSES_COMPLETED,
     CROSSES_PCT,
     SUCCESSFUL_DRIBBLES,
+    CARRY_PROGRESSIVE_DISTANCE,
     DISPOSSESSED,
     SCORING_CONTRIBUTIONS,
     PCT_DRIBBLERS_TACKLED,
@@ -353,7 +361,7 @@ GoalkeeperTemplate = [
     TemplateAttribute(
         "Long Pass % Completed",
         lambda df: 100 * (df[fb.PASSES_COMPLETED_LONG.N] / df[fb.PASSES_LONG.N]).fillna(0),
-        False,
+        True,
         columns_used=[fb.PASSES_COMPLETED_LONG.N, fb.PASSES_LONG.N],
     ),
     TemplateAttribute(
@@ -369,7 +377,7 @@ GoalkeeperTemplate = [
             (df[fb.PASSES_COMPLETED_SHORT.N] + df[fb.PASSES_COMPLETED_MEDIUM.N])
             / (df[fb.PASSES_SHORT.N] + df[fb.PASSES_MEDIUM.N])
         ).fillna(0),
-        False,
+        True,
         columns_used=[
             fb.PASSES_COMPLETED_SHORT.N,
             fb.PASSES_COMPLETED_MEDIUM.N,
