@@ -22,6 +22,12 @@ from footballdashboardsdata.utils.queries import (
 )
 
 from abc import abstractmethod
+from footmav.data_definitions.base import IntDataAttribute
+from footmav.data_definitions.data_sources import DataSource as DataSourceEnum
+from footmav.data_definitions.base import RegisteredAttributeStore
+
+if not "self_created_shots" in [a.N for a in RegisteredAttributeStore.get_registered_attributes()]:
+    SELF_CREATED_SHOTS = IntDataAttribute(name="self_created_shots", source=DataSourceEnum.FBREF)
 
 
 class PizzaDataSource(DataSource):
@@ -83,27 +89,38 @@ class PizzaDataSource(DataSource):
         all_template_columns = [item for sublist in all_template_columns for item in sublist]
         all_template_columns = list(set(all_template_columns))
         all_columns = [
-            fb.PLAYER_ID.N,
-            fb.PLAYER.N,
-            fb.DATE.N,
-            fb.TEAM.N,
-            fb.OPPONENT.N,
-            fb.MINUTES.N,
-            fb.COMPETITION.N,
-            fb.YEAR.N,
-            fb.ENRICHED_POSITION.N,
-            fb.TOUCHES.N,
-            "gender",
-            "match_id",
-            "dob",
+            "T1." + fb.PLAYER_ID.N,
+            "T1." + fb.PLAYER.N,
+            "T1." + fb.DATE.N,
+            "T1." + fb.TEAM.N,
+            "T1." + fb.OPPONENT.N,
+            "T1." + fb.MINUTES.N,
+            "T1." + fb.COMPETITION.N,
+            "T1." + fb.YEAR.N,
+            "T1." + fb.ENRICHED_POSITION.N,
+            "T1." + fb.TOUCHES.N,
+            "T1.gender",
+            "T1.match_id",
+            "T1.dob",
         ] + all_template_columns
         league_str = ",".join([f"'{league}'" for league in leagues])
         query = f"""
-        SELECT `{'`,`'.join(all_columns)}` 
-        FROM fbref WHERE comp in ({league_str}) AND season = {season}
+        SELECT {','.join(all_columns)}
+        FROM football_data.fbref T1
+        
+        WHERE T1.comp in ({league_str}) AND T1.season = {season}
         """
-
-        orig_df = Connection("M0neyMa$e").query(query)
+        conn = Connection("M0neyMa$e")
+        orig_df = conn.query(query)
+        shot_agg_data = conn.query(
+            f"""
+        SELECT * FROM derived.fbref_shot_aggregations T1
+        WHERE
+        T1.comp in ({league_str}) AND T1.season = {season}
+        """
+        )
+        orig_df = pd.merge(orig_df, shot_agg_data, on=["match_id", "squad", "player"], how="left", suffixes=("", "_y"))
+        orig_df = orig_df.drop([col for col in orig_df.columns if col.endswith("_y")], axis=1)
         gender = orig_df["gender"].iloc[0]
 
         adjust_factors = possession_adjust.adj_possession_factors(orig_df)
@@ -153,8 +170,8 @@ class PizzaDataSource(DataSource):
                 )
             ],
         ).df
-        if df.loc[(df[fb.PLAYER.N] == player_name) &(df[fb.TEAM.N]==team)].shape[0] == 0:
-        #if player_name not in df[fb.PLAYER.N].unique():
+        if df.loc[(df[fb.PLAYER.N] == player_name) & (df[fb.TEAM.N] == team)].shape[0] == 0:
+            # if player_name not in df[fb.PLAYER.N].unique():
             df_player = transformed_data.pipe(filter, [Filter(fb.PLAYER, player_name, filters.EQ)]).df
             df = pd.concat([df, df_player])
 

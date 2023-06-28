@@ -5,6 +5,13 @@ import pandas as pd
 from footmav import fb
 
 
+from footmav.data_definitions.base import IntDataAttribute, RegisteredAttributeStore
+from footmav.data_definitions.data_sources import DataSource as DataSourceEnum
+
+if not "self_created_shots" in [a.N for a in RegisteredAttributeStore.get_registered_attributes()]:
+    SELF_CREATED_SHOTS = IntDataAttribute(name="self_created_shots", source=DataSourceEnum.FBREF)
+
+
 class PossessionAdjustment:
     NONE = 0
     OUT_OF_POSS = 1
@@ -233,6 +240,15 @@ CARRY_PROGRESSIVE_DISTANCE = TemplateAttribute(
     columns_used=[fb.CARRY_PROGRESSIVE_DISTANCE.N],
 )
 
+
+SELF_CREATED_SHOT_PCT = TemplateAttribute(
+    "Self-Created Shot %",
+    lambda df: 100 * df[SELF_CREATED_SHOTS.N] / df[fb.SHOTS_TOTAL.N],
+    True,
+    columns_used=[fb.SHOTS_TOTAL.N],
+)
+
+
 MFTemplate = [
     PASSING_PCT,
     KEY_PASSES,
@@ -287,6 +303,7 @@ AttackerTemplate = [
     INTS_TACKLES,
     TURNOVERS,
     SUCCESSFUL_DRIBBLES,
+    SELF_CREATED_SHOT_PCT,
     NPXG,
     NPXG_PER_SHOT,
 ]
