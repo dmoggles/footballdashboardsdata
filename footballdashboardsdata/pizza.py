@@ -28,6 +28,7 @@ from footmav.data_definitions.base import RegisteredAttributeStore
 
 if not "self_created_shots" in [a.N for a in RegisteredAttributeStore.get_registered_attributes()]:
     SELF_CREATED_SHOTS = IntDataAttribute(name="self_created_shots", source=DataSourceEnum.FBREF)
+    OPEN_PLAY_SCA_FOR_OTHERS = IntDataAttribute(name="open_play_sca_for_others", source=DataSourceEnum.FBREF)
 
 
 class PizzaDataSource(DataSource):

@@ -10,6 +10,7 @@ from footmav.data_definitions.data_sources import DataSource as DataSourceEnum
 
 if not "self_created_shots" in [a.N for a in RegisteredAttributeStore.get_registered_attributes()]:
     SELF_CREATED_SHOTS = IntDataAttribute(name="self_created_shots", source=DataSourceEnum.FBREF)
+    OPEN_PLAY_SCA_FOR_OTHERS = IntDataAttribute(name="open_play_sca_for_others", source=DataSourceEnum.FBREF)
 
 
 class PossessionAdjustment:
@@ -248,6 +249,9 @@ SELF_CREATED_SHOT_PCT = TemplateAttribute(
     columns_used=[fb.SHOTS_TOTAL.N],
 )
 
+OPEN_PLAY_SHOTS_FOR_OTHERS_ATTR = TemplateAttribute(
+    "Open Play Shots Created\nfor Others", lambda df: df[OPEN_PLAY_SCA_FOR_OTHERS.N], True, columns_used=[]
+)
 
 MFTemplate = [
     PASSING_PCT,
@@ -299,7 +303,7 @@ AttackerTemplate = [
     PASSING_PCT,
     ASSISTS,
     XA,
-    SHOTS_CREATED_OPEN_PLAY,
+    OPEN_PLAY_SHOTS_FOR_OTHERS_ATTR,
     INTS_TACKLES,
     TURNOVERS,
     SUCCESSFUL_DRIBBLES,
@@ -319,7 +323,7 @@ TargetmanTemplate = [
     PASSING_PCT,
     FOULS_WON,
     TOUCHES_IN_PEN_AREA,
-    SHOTS_CREATED_OPEN_PLAY,
+    OPEN_PLAY_SHOTS_FOR_OTHERS_ATTR,
     NPXG_PER_SHOT,
 ]
 
