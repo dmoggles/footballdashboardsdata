@@ -1,7 +1,6 @@
 from typing import List
 import pandas as pd
 from footballdashboardsdata.datasource import DataSource
-from footballdashboardsdata.pizza import PizzaDataSource
 
 
 class RadarDataSource(DataSource):

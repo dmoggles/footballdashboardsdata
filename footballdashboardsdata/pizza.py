@@ -5,7 +5,7 @@ from footmav import FbRefData, fb, aggregate_by, filter, filters, Filter, per_90
 from footmav.operations.possession_adjust import possession_adjust
 from footballdashboardsdata.datasource import DataSource
 from footballdashboardsdata.utils import possession_adjust
-from footballdashboardsdata.templates import (
+from footballmodels.definitions.templates import (
     MFTemplate,
     CBTemplate,
     FBTemplate,
