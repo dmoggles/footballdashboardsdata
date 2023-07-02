@@ -4,3 +4,4 @@ from footballdashboardsdata.rolling_npxg import RollingNPXGDataSource
 from footballdashboardsdata.besteleven import BestEleventDataSource
 from footballdashboardsdata.shotdata import ShotDataSource, ShotDataSourceEvents
 from footballdashboardsdata.radar import RadarDataSource
+from footballdashboardsdata.player_shot_datasource import PlayerShotDatasource
