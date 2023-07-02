@@ -21,7 +21,8 @@ setup(
     install_requires=[
         "setuptools>=45.0",
         "pandas",
-        "footballmodels" "dbconnect @ git+http://github.com/dmoggles/dbconnect",
+        "footballmodels",
+        "dbconnect @ git+http://github.com/dmoggles/dbconnect",
     ],
     classifiers=[
         "Development Status :: 1 - Planning",
