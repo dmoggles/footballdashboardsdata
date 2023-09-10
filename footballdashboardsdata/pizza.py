@@ -55,6 +55,7 @@ class PizzaDataSource(DataSource):
         specific_data = self._specific_position_impl(data)
         data_dict = {
             "Player": data[fb.PLAYER.N].tolist(),
+            "player_id": data[fb.PLAYER_ID.N].tolist(),
             "Team": data[fb.TEAM.N].tolist(),
             "Minutes": data[fb.MINUTES.N].tolist(),
             "Competition": data[fb.COMPETITION.N].tolist(),
