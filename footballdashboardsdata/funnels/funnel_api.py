@@ -52,7 +52,7 @@ def get_dataframe_for_match(match_id: int, conn: Connection):
     ON W.competition = L1.ws_league_name
     LEFT JOIN whoscored_meta MET
     ON W.matchId=MET.matchId
-    WHERE W.matchId={match_id} AND T1.gender='{gender}'
+    WHERE W.matchId={match_id} AND T1.gender='{gender}' AND T2.gender='{gender}'
     """
 
     query2 = f"""
@@ -86,7 +86,7 @@ def get_dataframe_for_match(match_id: int, conn: Connection):
            ON W.opponent = T2.ws_team_name
            LEFT JOIN mclachbot_leagues L1
            ON W.competition = L1.ws_league_name
-           WHERE W.matchId={match_id} AND T1.gender='{gender}'
+           WHERE W.matchId={match_id} AND T1.gender='{gender}' AND T2.gender='{gender}'
     
     """
     data1 = conn.wsquery(query1)
