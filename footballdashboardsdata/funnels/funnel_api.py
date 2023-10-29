@@ -5,23 +5,23 @@ from dbconnect.connector import Connection
 
 
 def attach_positional_data(conn, data):
-        position_df = conn.query(
-            "SELECT * FROM football_data.whoscored_positions"
-        )
-        position_df["formation_name"] = position_df["formation_name"].apply(
-            lambda x: x.replace("-", "")
-        )
-        data = pd.merge(
-            data,
-            position_df,
-            left_on=["formation", "position"],
-            right_on=["formation_name", "position"],
-            suffixes=("", "_"),
-            how="left",
-        )
-        return data
+    position_df = conn.query("SELECT * FROM football_data.whoscored_positions")
+    position_df["formation_name"] = position_df["formation_name"].apply(lambda x: x.replace("-", ""))
+    data = pd.merge(
+        data,
+        position_df,
+        left_on=["formation", "position"],
+        right_on=["formation_name", "position"],
+        suffixes=("", "_"),
+        how="left",
+    )
+    return data
+
 
 def get_dataframe_for_match(match_id: int, conn: Connection):
+    gender = conn.query(f"SELECT IF(comp='WSL','w','m') AS gender FROM whoscored_meta WHERE matchId = {match_id}")[
+        "gender"
+    ].tolist()[0]
     query1 = f"""
     SELECT W.*,
     E.shirt_number, E.formation, E.position, E.pass_receiver, E.pass_receiver_shirt_number, E.pass_receiver_position,
@@ -52,7 +52,7 @@ def get_dataframe_for_match(match_id: int, conn: Connection):
     ON W.competition = L1.ws_league_name
     LEFT JOIN whoscored_meta MET
     ON W.matchId=MET.matchId
-    WHERE W.matchId={match_id} AND T1.gender='m'
+    WHERE W.matchId={match_id} AND T1.gender='{gender}'
     """
 
     query2 = f"""
@@ -86,7 +86,7 @@ def get_dataframe_for_match(match_id: int, conn: Connection):
            ON W.opponent = T2.ws_team_name
            LEFT JOIN mclachbot_leagues L1
            ON W.competition = L1.ws_league_name
-           WHERE W.matchId={match_id} AND T1.gender='m'
+           WHERE W.matchId={match_id} AND T1.gender='{gender}'
     
     """
     data1 = conn.wsquery(query1)
@@ -96,7 +96,7 @@ def get_dataframe_for_match(match_id: int, conn: Connection):
     data = pd.concat([data1, data2])
     data["sub_id"] = data["sub_id"].fillna(1)
     data = data.sort_values(["period", "minute", "second", "eventId", "sub_id"])
-    data=attach_positional_data(conn, data)
+    data = attach_positional_data(conn, data)
     return data
 
 
