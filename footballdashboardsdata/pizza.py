@@ -15,7 +15,9 @@ from footballmodels.definitions.templates import (
     TargetmanTemplate,
     TemplateAttribute,
     PossessionAdjustment,
+    BuildUpIndexTemplate,
 )
+import numpy as np
 from footballdashboardsdata.utils.queries import (
     get_decorated_team_name_from_fb_name,
     get_multiple_decorated_league_names_from_fb_names,
@@ -26,9 +28,15 @@ from footmav.data_definitions.base import IntDataAttribute
 from footmav.data_definitions.data_sources import DataSource as DataSourceEnum
 from footmav.data_definitions.base import RegisteredAttributeStore
 
-if not "self_created_shots" in [a.N for a in RegisteredAttributeStore.get_registered_attributes()]:
-    SELF_CREATED_SHOTS = IntDataAttribute(name="self_created_shots", source=DataSourceEnum.FBREF)
-    OPEN_PLAY_SCA_FOR_OTHERS = IntDataAttribute(name="open_play_sca_for_others", source=DataSourceEnum.FBREF)
+if not "self_created_shots" in [
+    a.N for a in RegisteredAttributeStore.get_registered_attributes()
+]:
+    SELF_CREATED_SHOTS = IntDataAttribute(
+        name="self_created_shots", source=DataSourceEnum.FBREF
+    )
+    OPEN_PLAY_SCA_FOR_OTHERS = IntDataAttribute(
+        name="open_play_sca_for_others", source=DataSourceEnum.FBREF
+    )
 
 
 class PizzaDataSource(DataSource):
@@ -42,11 +50,15 @@ class PizzaDataSource(DataSource):
 
     def _specific_position_impl(self, data: pd.DataFrame) -> dict:
         data_value = {
-            f"{attrib.name}__value": attrib.calculation(data).apply(lambda x: f"{x:.{attrib.sig_figs}f}")
+            f"{attrib.name}__value": attrib.calculation(data).apply(
+                lambda x: f"{x:.{attrib.sig_figs}f}"
+            )
             for attrib in self.get_template()
         }
         data_rank = {
-            attrib.name: attrib.calculation(data).rank(pct=True, method="min", ascending=attrib.ascending_rank)
+            attrib.name: attrib.calculation(data).rank(
+                pct=True, method="min", ascending=attrib.ascending_rank
+            )
             for attrib in self.get_template()
         }
         return {**data_value, **data_rank}
@@ -84,11 +96,19 @@ class PizzaDataSource(DataSource):
         return result["decorated_name"].values[0]
 
     def impl_get_data(
-        self, player_name: str, leagues: List[str], team: str, season: int, use_all_minutes: bool = False
+        self,
+        player_name: str,
+        leagues: List[str],
+        team: str,
+        season: int,
+        use_all_minutes: bool = False,
+        filter_to_player: bool = True,
     ) -> pd.DataFrame:
         template = self.get_template()
         all_template_columns = [attr.columns_used for attr in template]
-        all_template_columns = [item for sublist in all_template_columns for item in sublist]
+        all_template_columns = [
+            item for sublist in all_template_columns for item in sublist
+        ]
         all_template_columns = list(set(all_template_columns))
         all_columns = [
             "T1." + fb.PLAYER_ID.N,
@@ -121,12 +141,22 @@ class PizzaDataSource(DataSource):
         T1.comp in ({league_str}) AND T1.season = {season}
         """
         )
-        orig_df = pd.merge(orig_df, shot_agg_data, on=["match_id", "squad", "player"], how="left", suffixes=("", "_y"))
-        orig_df = orig_df.drop([col for col in orig_df.columns if col.endswith("_y")], axis=1)
+        orig_df = pd.merge(
+            orig_df,
+            shot_agg_data,
+            on=["match_id", "squad", "player"],
+            how="left",
+            suffixes=("", "_y"),
+        )
+        orig_df = orig_df.drop(
+            [col for col in orig_df.columns if col.endswith("_y")], axis=1
+        )
         gender = orig_df["gender"].iloc[0]
 
         adjust_factors = possession_adjust.adj_possession_factors(orig_df)
-        orig_df = orig_df.merge(adjust_factors, on=[fb.COMPETITION.N, fb.TEAM.N, fb.YEAR.N], how="left")
+        orig_df = orig_df.merge(
+            adjust_factors, on=[fb.COMPETITION.N, fb.TEAM.N, fb.YEAR.N], how="left"
+        )
         adjusted_columns = []
         for attribute in template:
             if attribute.possession_adjust == PossessionAdjustment.IN_POSS:
@@ -137,12 +167,16 @@ class PizzaDataSource(DataSource):
             elif attribute.possession_adjust == PossessionAdjustment.OUT_OF_POSS:
                 for col in attribute.columns_used:
                     if col not in adjusted_columns:
-                        orig_df[col] = orig_df[col] * orig_df["out_of_possession_factor"]
+                        orig_df[col] = (
+                            orig_df[col] * orig_df["out_of_possession_factor"]
+                        )
                         adjusted_columns.append(col)
 
         fbref_data = FbRefData(orig_df)
 
-        non_position_restricted_player_data = fbref_data.pipe(aggregate_by, [fb.PLAYER_ID, fb.TEAM]).pipe(per_90).df
+        non_position_restricted_player_data = (
+            fbref_data.pipe(aggregate_by, [fb.PLAYER_ID, fb.TEAM]).pipe(per_90).df
+        )
         non_pos_resetricted_player_df = non_position_restricted_player_data[
             non_position_restricted_player_data[fb.PLAYER.N] == player_name
         ]
@@ -172,9 +206,14 @@ class PizzaDataSource(DataSource):
                 )
             ],
         ).df
-        if df.loc[(df[fb.PLAYER.N] == player_name) & (df[fb.TEAM.N] == team)].shape[0] == 0:
+        if (
+            df.loc[(df[fb.PLAYER.N] == player_name) & (df[fb.TEAM.N] == team)].shape[0]
+            == 0
+        ):
             # if player_name not in df[fb.PLAYER.N].unique():
-            df_player = transformed_data.pipe(filter, [Filter(fb.PLAYER, player_name, filters.EQ)]).df
+            df_player = transformed_data.pipe(
+                filter, [Filter(fb.PLAYER, player_name, filters.EQ)]
+            ).df
             df = pd.concat([df, df_player])
 
         if use_all_minutes:
@@ -184,18 +223,29 @@ class PizzaDataSource(DataSource):
 
         data_dict = self.get_data_dict(df)
         output = pd.DataFrame(data_dict)
-
-        output_row = output.loc[(output["Player"] == player_name) & (output["Team"] == team)].copy()
-        player_dob = orig_df.loc[(orig_df[fb.PLAYER.N] == player_name) & (orig_df[fb.TEAM.N] == team), "dob"].iloc[0]
+        if not filter_to_player:
+            return output
+        output_row = output.loc[
+            (output["Player"] == player_name) & (output["Team"] == team)
+        ].copy()
+        player_dob = orig_df.loc[
+            (orig_df[fb.PLAYER.N] == player_name) & (orig_df[fb.TEAM.N] == team), "dob"
+        ].iloc[0]
         if player_dob != pd.Timestamp(1900, 1, 1):
             output_row["Age"] = int((max(orig_df[fb.DATE.N]) - player_dob).days / 365)
         else:
             output_row["Age"] = None
         output_row["image_team"] = output_row["Team"]
         output_row["image_league"] = output_row["Competition"]
-        output_row["Team"] = self._get_decorated_team_name(output_row["Team"].iloc[0], gender)
-        output_row["Competition"] = self._get_decorated_league_name(output_row["Competition"].iloc[0])
-        output_row["All Competitions"] = ",".join(orig_df[fb.COMPETITION.N].unique().tolist())
+        output_row["Team"] = self._get_decorated_team_name(
+            output_row["Team"].iloc[0], gender
+        )
+        output_row["Competition"] = self._get_decorated_league_name(
+            output_row["Competition"].iloc[0]
+        )
+        output_row["All Competitions"] = ",".join(
+            orig_df[fb.COMPETITION.N].unique().tolist()
+        )
         return output_row
 
 
@@ -309,15 +359,25 @@ class TeamPizzaDataSource(DataSource):
         )
         agg_dict = {col: "sum" for col in cols}
         agg_dict.update({"match_id": "nunique"})
-        df = df.groupby([fb.TEAM.N, fb.COMPETITION.N, fb.YEAR.N, "gender"]).agg(agg_dict).reset_index()
+        df = (
+            df.groupby([fb.TEAM.N, fb.COMPETITION.N, fb.YEAR.N, "gender"])
+            .agg(agg_dict)
+            .reset_index()
+        )
         df = df.rename(columns={"match_id": "matches"})
         return df
 
     def _aggregate_shot_data(self, df_shots: pd.DataFrame) -> pd.DataFrame:
         cols_to_sum = ["live_xg", "setpiece_xg", "big_chance"]
-        team_df = df_shots.groupby([fb.TEAM.N, fb.COMPETITION.N]).agg({c: "sum" for c in cols_to_sum}).reset_index()
+        team_df = (
+            df_shots.groupby([fb.TEAM.N, fb.COMPETITION.N])
+            .agg({c: "sum" for c in cols_to_sum})
+            .reset_index()
+        )
         opposition_df = (
-            df_shots.groupby([fb.OPPONENT.N, fb.COMPETITION.N]).agg({c: "sum" for c in cols_to_sum}).reset_index()
+            df_shots.groupby([fb.OPPONENT.N, fb.COMPETITION.N])
+            .agg({c: "sum" for c in cols_to_sum})
+            .reset_index()
         )
         combined_df = pd.merge(
             team_df,
@@ -341,7 +401,11 @@ class TeamPizzaDataSource(DataSource):
             ]
         )
         agg_dict = {col: "sum" for col in cols}
-        df = df.groupby([fb.OPPONENT.N, fb.COMPETITION.N, fb.YEAR.N, "gender"]).agg(agg_dict).reset_index()
+        df = (
+            df.groupby([fb.OPPONENT.N, fb.COMPETITION.N, fb.YEAR.N, "gender"])
+            .agg(agg_dict)
+            .reset_index()
+        )
         return df
 
     @classmethod
@@ -353,12 +417,16 @@ class TeamPizzaDataSource(DataSource):
 
     def _specific_position_impl(self, data: pd.DataFrame) -> dict:
         data_rank = {
-            attrib.name: attrib.calculation(data).rank(pct=True, method="min", ascending=attrib.ascending_rank)
+            attrib.name: attrib.calculation(data).rank(
+                pct=True, method="min", ascending=attrib.ascending_rank
+            )
             # attrib.name: attrib.calculation(data)
             for attrib in self.get_template()
         }
         data_value = {
-            f"{attrib.name}__value": attrib.calculation(data).apply(lambda x: f"{x:.{attrib.sig_figs}f}")
+            f"{attrib.name}__value": attrib.calculation(data).apply(
+                lambda x: f"{x:.{attrib.sig_figs}f}"
+            )
             for attrib in self.get_template()
         }
 
@@ -401,12 +469,17 @@ class TeamPizzaDataSource(DataSource):
             """
         )
         data["is_open_play"] = data.apply(
-            lambda r: (r["notes"] != "penalty") & (r["sca_1_event"] not in ["Pass (Dead)", "Fouled"]),
+            lambda r: (r["notes"] != "penalty")
+            & (r["sca_1_event"] not in ["Pass (Dead)", "Fouled"]),
             axis=1,
         )
         data["is_penalty"] = data["notes"].apply(lambda x: x == "penalty")
         data["live_xg"] = data["xg"] * data["is_open_play"].astype(int)
-        data["setpiece_xg"] = data["xg"] * (~data["is_open_play"]).astype(int) * (~data["is_penalty"]).astype(int)
+        data["setpiece_xg"] = (
+            data["xg"]
+            * (~data["is_open_play"]).astype(int)
+            * (~data["is_penalty"]).astype(int)
+        )
         data["big_chance"] = (data["xg"] > 0.3).astype(int)
         return data
 
@@ -415,7 +488,9 @@ class TeamPizzaDataSource(DataSource):
 
         template = self.get_template()
         all_template_columns = [attr.columns_used for attr in template]
-        all_template_columns = [item for sublist in all_template_columns for item in sublist]
+        all_template_columns = [
+            item for sublist in all_template_columns for item in sublist
+        ]
         all_template_columns = list(set(all_template_columns))
         all_columns = [
             fb.TEAM.N,
@@ -450,9 +525,50 @@ class TeamPizzaDataSource(DataSource):
         data_combined = data_combined.fillna(0)
         data_dict = self.get_data_dict(data_combined)
         output = pd.DataFrame(data_dict)
-        decorated_league_names = get_multiple_decorated_league_names_from_fb_names(leagues)
+        decorated_league_names = get_multiple_decorated_league_names_from_fb_names(
+            leagues
+        )
         output = output[output["Team"] == team]
         output["All Leagues"] = ", ".join(decorated_league_names.values())
-        output["Decorated League"] = output["Competition"].apply(lambda x: decorated_league_names[x])
-        output["Decorated Team"] = get_decorated_team_name_from_fb_name(team, output["Competition"].tolist()[0])
+        output["Decorated League"] = output["Competition"].apply(
+            lambda x: decorated_league_names[x]
+        )
+        output["Decorated Team"] = get_decorated_team_name_from_fb_name(
+            team, output["Competition"].tolist()[0]
+        )
         return output
+
+
+class BuildUpIndexPizzaDataSource(PizzaDataSource):
+    @classmethod
+    def get_name(cls) -> str:
+        return "BuildUpIndexPizza"
+
+    def get_comparison_positions(self) -> List[str]:
+        return ["CM", "DM"]
+
+    def get_template(self) -> List[TemplateAttribute]:
+        return BuildUpIndexTemplate
+
+    def _specific_position_impl(self, data: pd.DataFrame) -> dict:
+        data_value = {
+            f"{attrib.name}__value": attrib.calculation(data).apply(
+                lambda x: f"{x:.{attrib.sig_figs}f}"
+            )
+            for attrib in self.get_template()
+        }
+        data_rank = {
+            attrib.name: attrib.calculation(data).rank(
+                pct=True, method="min", ascending=attrib.ascending_rank
+            )
+            for attrib in self.get_template()
+        }
+        d = {**data_value, **data_rank}
+        d["Build Up Score"] = (
+            sum([d[t.name] for t in self.get_template()])
+            / np.sqrt(len(self.get_template()))
+        ).rank(pct=True, method="min")
+        d["Build Up Score__value"] = (d["Build Up Score"] * 100).apply(
+            lambda x: f"{x:.0f}"
+        )
+        return d
