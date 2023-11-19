@@ -5,3 +5,6 @@ from footballdashboardsdata.funnels.butterfly_data import (
     ChanceCreationButterflyFunnel,
     DuelsButterflyFunnel,
 )
+from footballdashboardsdata.funnels.single_match_shot_funnel import (
+    SingleMatchShotFunnel,
+)
