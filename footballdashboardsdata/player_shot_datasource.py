@@ -37,6 +37,7 @@ class PlayerShotDatasource(DataSource):
     def impl_get_data(self, season: int, competition: str, team: str, player: str):
         conn = Connection("M0neyMa$e")
         player_id = self._get_player_id(season, competition, team, player)
+        gender = 'w' if competition in ['WSL'] else 'm'
         data = conn.wsquery(
             f"""
         SELECT T1.*,T2.*, T3.*, T4.decorated_name AS decorated_team_name,
@@ -46,7 +47,7 @@ class PlayerShotDatasource(DataSource):
         JOIN derived.whoscored_extra_event_info T3
         ON T1.id = T3.id
         JOIN football_data.mclachbot_teams T4
-        ON T1.team = T4.ws_team_name AND T4.gender='m'
+        ON T1.team = T4.ws_team_name AND T4.gender='{gender}'
         JOIN football_data.mclachbot_leagues T5
         ON T1.competition = T5.ws_league_name
         WHERE T1.season = {season}  
