@@ -45,23 +45,23 @@ def progressive_carry_distance(dataframe):
 def open_play_passes_completed_into_the_box(dataframe):
     return (
         (dataframe["event_type"] == EventType.Pass)
-        & (WF.col_has_qualifier(dataframe, qualifier_code=2))  # not cross
-        & (~WF.col_has_qualifier(dataframe, qualifier_code=5))  # not free kick
-        & (~WF.col_has_qualifier(dataframe, qualifier_code=6))  # not corner
-        & (~WF.col_has_qualifier(dataframe, qualifier_code=107))  # not throw in
-        & (~WF.col_has_qualifier(dataframe, qualifier_code=123))  # not keeper throw
+        & (dataframe["outcomeType"] == 1)
         & (WF.into_attacking_box(dataframe))
     )
 
 
 @event_aggregator(suffix="")
 def crosses_completed_into_the_box(dataframe):
-    return crosses.success(dataframe) & WF.in_attacking_box(dataframe)
+    return crosses.success(dataframe) & WF.into_attacking_box(dataframe)
 
 
 @event_aggregator(suffix="")
 def carries_into_the_box(dataframe):
-    return (dataframe["event_type"] == EventType.Carry) & WF.into_attacking_box(dataframe)
+    return (
+        (dataframe["event_type"] == EventType.Carry)
+        & WF.into_attacking_box(dataframe)
+        & (dataframe["outcomeType"] == 1)
+    )
 
 
 class BallProgressionButterflyFunnel(Funnel):
@@ -127,14 +127,17 @@ class BallProgressionButterflyFunnel(Funnel):
             .reset_index()
         )
         grouped_progressives["progressive_distance"] = (
-            grouped_progressives["progressive_carry_distance"] + grouped_progressives["progressive_pass_distance"]
+            grouped_progressives["progressive_carry_distance"]
+            + grouped_progressives["progressive_pass_distance"]
         )
         grouped_progressives["progressive_distance_per_touch"] = (
             grouped_progressives["progressive_distance"]
             / grouped_progressives["touches_attempted"]
             * (grouped_progressives["touches_attempted"] > 5)
         )
-        grouped_progressives = grouped_progressives.loc[grouped_progressives["progressive_distance"] > 30]
+        grouped_progressives = grouped_progressives.loc[
+            grouped_progressives["progressive_distance"] > 30
+        ]
         return grouped_progressives
 
 
@@ -206,9 +209,13 @@ class ExpectedGoalContributionButterflyFunnel(Funnel):
             )
             .reset_index()
         )
-        grouped["expected_goal_contributions"] = grouped["expected_assists"] + grouped["non_penalty_expected_goals"]
+        grouped["expected_goal_contributions"] = (
+            grouped["expected_assists"] + grouped["non_penalty_expected_goals"]
+        )
         grouped["expected_goal_contributions_per_touch"] = (
-            grouped["expected_goal_contributions"] / grouped["touches_attempted"] * (grouped["touches_attempted"] > 5)
+            grouped["expected_goal_contributions"]
+            / grouped["touches_attempted"]
+            * (grouped["touches_attempted"] > 5)
         )
         grouped = grouped.loc[grouped["expected_goal_contributions"] > 0]
         return grouped
@@ -284,7 +291,9 @@ class ChanceCreationButterflyFunnel(Funnel):
             + grouped["carries_into_the_box"]
         )
         grouped["successful_deliveries_into_penalty_box"] = (
-            grouped["successful_actions_into_box"] / grouped["touches_attempted"] * (grouped["touches_attempted"] > 5)
+            grouped["successful_actions_into_box"]
+            / grouped["touches_attempted"]
+            * (grouped["touches_attempted"] > 5)
         )
         grouped = grouped.loc[grouped["successful_actions_into_box"] > 0]
         return grouped
@@ -361,9 +370,15 @@ class DuelsButterflyFunnel(Funnel):
             .reset_index()
         )
         grouped["total_duels_attempted"] = (
-            grouped["ground_duels_won"] + grouped["ground_duels_lost"] + grouped["aerial_duels_attempted"]
+            grouped["ground_duels_won"]
+            + grouped["ground_duels_lost"]
+            + grouped["aerial_duels_attempted"]
         )
-        grouped["total_duels_won"] = grouped["ground_duels_won"] + grouped["aerial_duels_won"]
-        grouped["duel_win_percentage"] = grouped["total_duels_won"] / grouped["total_duels_attempted"]
+        grouped["total_duels_won"] = (
+            grouped["ground_duels_won"] + grouped["aerial_duels_won"]
+        )
+        grouped["duel_win_percentage"] = (
+            grouped["total_duels_won"] / grouped["total_duels_attempted"]
+        )
         grouped = grouped.loc[grouped["total_duels_won"] > 0]
         return grouped

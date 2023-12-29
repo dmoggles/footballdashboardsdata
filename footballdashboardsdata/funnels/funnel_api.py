@@ -6,7 +6,9 @@ from dbconnect.connector import Connection
 
 def attach_positional_data(conn, data):
     position_df = conn.query("SELECT * FROM football_data.whoscored_positions")
-    position_df["formation_name"] = position_df["formation_name"].apply(lambda x: x.replace("-", ""))
+    position_df["formation_name"] = position_df["formation_name"].apply(
+        lambda x: x.replace("-", "")
+    )
     data = pd.merge(
         data,
         position_df,
@@ -19,9 +21,9 @@ def attach_positional_data(conn, data):
 
 
 def get_dataframe_for_match(match_id: int, conn: Connection):
-    gender = conn.query(f"SELECT IF(comp='WSL','w','m') AS gender FROM whoscored_meta WHERE matchId = {match_id}")[
-        "gender"
-    ].tolist()[0]
+    gender = conn.query(
+        f"SELECT IF(comp='WSL','w','m') AS gender FROM whoscored_meta WHERE matchId = {match_id}"
+    )["gender"].tolist()[0]
     query1 = f"""
     SELECT W.*,
     E.shirt_number, E.formation, E.position, E.pass_receiver, E.pass_receiver_shirt_number, E.pass_receiver_position,
@@ -29,6 +31,7 @@ def get_dataframe_for_match(match_id: int, conn: Connection):
     P.passtypes,
     X.value as xT,
     XGT.xg AS xG,
+    SEQUENCE.possession_number,
     T1.decorated_name as decorated_team_name,
     T2.decorated_name as decorated_opponent_name,
     L1.decorated_name as decorated_league_name,
@@ -44,6 +47,8 @@ def get_dataframe_for_match(match_id: int, conn: Connection):
     on W.id=X.id
     LEFT JOIN derived.whoscored_shot_data XGT
     on W.id=XGT.id
+    LEFT JOIN derived.whoscored_possession_sequence SEQUENCE
+    ON W.id=SEQUENCE.id
     LEFT JOIN mclachbot_teams T1
     ON W.team = T1.ws_team_name
     LEFT JOIN mclachbot_teams T2
@@ -126,6 +131,33 @@ class Funnel(ABC):
         """
 
 
+class SingleMatchFunnel(Funnel):
+    @classmethod
+    def apply(cls, df: pd.DataFrame, **kwargs):
+        """
+        Apply the funnel to the dataframe
+
+        Args:
+            df (pd.DataFrame): _description_
+            **kwargs: _description_
+
+        Returns:
+            _description_
+        """
+
+        return df
+
+    @classmethod
+    def get_name(cls) -> str:
+        """
+        Get the name of the funnel.
+
+        Returns:
+            str: _description_
+        """
+        return "single_match"
+
+
 class DataFrameFunnelDataSource:
     def __init__(self, df: pd.DataFrame):
         self.df = df
@@ -134,7 +166,11 @@ class DataFrameFunnelDataSource:
         # Find the appropriate funnel class and run the
         # data through the apply method
         try:
-            subclass = next(c for c in get_all_subclasses(Funnel) if c.get_name() == data_source_name)
+            subclass = next(
+                c
+                for c in get_all_subclasses(Funnel)
+                if c.get_name() == data_source_name
+            )
             return subclass.apply(self.df, **kwargs)
         except StopIteration as e:
             raise ValueError(f"Invalid data requester name: {data_source_name}") from e
