@@ -142,12 +142,12 @@ class TeamRankDataSource(DataSource):
                         competitions.extend(lg)
                         break
         seasons = [c[2] for c in team_choices]
-        query = query_string(competitions, seasons)
+        query = query_string(set(competitions), seasons)
         data = conn.query(query)
         selected_teams = []
         for tc in team_choices:
             if select_similar_leagues:
-                comp_leagues = [c for c in LEAGUE_GROUPS if tc[0] in c]
+                comp_leagues = next(c for c in LEAGUE_GROUPS if tc[0] in c)
             else:
                 comp_leagues = [tc[0]]
 
