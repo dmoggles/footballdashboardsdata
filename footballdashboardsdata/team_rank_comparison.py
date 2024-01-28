@@ -144,18 +144,26 @@ class TeamRankDataSource(DataSource):
         seasons = [c[2] for c in team_choices]
         query = query_string(competitions, seasons)
         data = conn.query(query)
-        for column_def in METRICS:
-            data[column_def[0]] = data[column_def[0]].rank(
-                ascending=column_def[1], pct=True, method="min"
-            )
-        col_renames = {c[0]: c[2] for c in METRICS}
-        data = data.rename(columns=col_renames)
-        team_choice_tuples = [(c[1], c[2]) for c in team_choices]
-        data_for_teams = data.loc[
-            data.apply(
-                lambda x: (x["teamId"], x["season"]) in team_choice_tuples, axis=1
-            )
-        ]
+        selected_teams = []
+        for tc in team_choices:
+            if select_similar_leagues:
+                comp_leagues = [c for c in LEAGUE_GROUPS if tc[0] in c]
+            else:
+                comp_leagues = [tc[0]]
+
+            comp_data = data.loc[
+                (data["season"] == tc[2]) & (data["competition"].isin(comp_leagues))
+            ].copy()
+
+            for column_def in METRICS:
+                comp_data[column_def[0]] = comp_data[column_def[0]].rank(
+                    ascending=column_def[1], pct=True, method="min"
+                )
+            col_renames = {c[0]: c[2] for c in METRICS}
+            comp_data = comp_data.rename(columns=col_renames)
+            # team_choice_tuples = [(c[1], c[2]) for c in team_choices]
+            selected_teams.append(comp_data.loc[comp_data["teamId"] == tc[1]])
+        data_for_teams = pd.concat(selected_teams)
         column_order = [
             c for c in data_for_teams.columns if c not in [m[2] for m in METRICS]
         ] + [m[2] for m in METRICS]
