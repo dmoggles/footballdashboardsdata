@@ -1,5 +1,6 @@
 from dbconnect.connector import Connection
 import pandas as pd
+import datetime as dt
 from typing import List
 from footmav import FbRefData, fb, aggregate_by, filter, filters, Filter, per_90
 from footmav.operations.possession_adjust import possession_adjust
@@ -103,6 +104,8 @@ class PizzaDataSource(DataSource):
         season: int,
         use_all_minutes: bool = False,
         filter_to_player: bool = True,
+        start_date: dt.date = None,
+        end_date: dt.date = None,
     ) -> pd.DataFrame:
         template = self.get_template()
         all_template_columns = [attr.columns_used for attr in template]
@@ -132,15 +135,22 @@ class PizzaDataSource(DataSource):
         
         WHERE T1.comp in ({league_str}) AND T1.season = {season}
         """
+        if start_date is not None:
+            query += f" AND T1.date >= '{start_date}'"
+        if end_date is not None:
+            query += f" AND T1.date <= '{end_date}'"
         conn = Connection("M0neyMa$e")
         orig_df = conn.query(query)
-        shot_agg_data = conn.query(
-            f"""
+        all_match_ids = orig_df["match_id"].unique()
+        all_match_ids_string = ",".join([f"'{i}'" for i in all_match_ids])
+        shot_agg_data_query = f"""
         SELECT * FROM derived.fbref_shot_aggregations T1
         WHERE
         T1.comp in ({league_str}) AND T1.season = {season}
+        AND T1.match_id in ({all_match_ids_string})
         """
-        )
+
+        shot_agg_data = conn.query(shot_agg_data_query)
         orig_df = pd.merge(
             orig_df,
             shot_agg_data,
@@ -246,6 +256,18 @@ class PizzaDataSource(DataSource):
         output_row["All Competitions"] = ",".join(
             orig_df[fb.COMPETITION.N].unique().tolist()
         )
+        if start_date and end_date:
+            date_label = (
+                f"{start_date.strftime('%d %b, %Y')} - {end_date.strftime('%d %b, %Y')}"
+            )
+        elif start_date:
+            date_label = f"from {start_date.strftime('%d %b, %Y')}"
+        elif end_date:
+            date_label = f"until {end_date.strftime('%d %b, %Y')}"
+        else:
+            date_label = ""
+        output_row["DateLabel"] = date_label
+
         return output_row
 
 

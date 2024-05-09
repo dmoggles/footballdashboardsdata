@@ -1,6 +1,7 @@
 from typing import List
 import pandas as pd
 from footballdashboardsdata.datasource import DataSource
+import datetime as dt
 
 
 class RadarDataSource(DataSource):
@@ -15,11 +16,15 @@ class RadarDataSource(DataSource):
         leagues: List[str],
         teams: List[str],
         seasons: List[int],
+        start_dates: List[dt.date] = None,
+        end_dates: List[dt.date] = None,
         use_all_minutes: bool = False,
     ) -> pd.DataFrame:
         assert len(players) == 2, "Must provide exactly 2 players"
         assert len(teams) == 2, "Must provide exactly 2 teams"
         assert len(seasons) == 2, "Must provide exactly 2 seasons"
+        start_dates = start_dates or [None, None]
+        end_dates = end_dates or [None, None]
 
         df1 = DataSource.get_data(
             template_name,
@@ -28,6 +33,8 @@ class RadarDataSource(DataSource):
             team=teams[0],
             season=seasons[0],
             use_all_minutes=use_all_minutes,
+            start_date=start_dates[0],
+            end_date=end_dates[0],
         )
         df2 = DataSource.get_data(
             template_name,
@@ -36,6 +43,8 @@ class RadarDataSource(DataSource):
             team=teams[1],
             season=seasons[1],
             use_all_minutes=use_all_minutes,
+            start_date=start_dates[1],
+            end_date=end_dates[1],
         )
         df = pd.concat([df1, df2])
         template_name = {
