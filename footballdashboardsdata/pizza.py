@@ -464,11 +464,11 @@ class TeamPizzaDataSource(DataSource):
         data_dict.update(specific_data)
         return data_dict
 
-    def _get_shots_data(self, leagues, season):
-        leagues_str = "'" + "','".join(leagues) + "'"
+    def _get_shots_data(self, match_ids: List[str]) -> pd.DataFrame:
+        match_ids_str = "'" + "','".join(match_ids) + "'"
         conn = Connection("M0neyMa$e")
-        data = conn.query(
-            f"""
+
+        query = f"""
             SELECT 
             T1.squad, 
             T1.xg,
@@ -482,14 +482,15 @@ class TeamPizzaDataSource(DataSource):
             LEFT JOIN 
             (
                 SELECT DISTINCT(match_id),squad,opponent FROM fbref 
-                WHERE season={season} and comp IN ({leagues_str})
+                WHERE match_id IN ({match_ids_str})
             ) T2
             ON 
             T1.match_id=T2.match_id 
             AND T1.squad=T2.squad
-            WHERE T1.season={season} AND T1.comp IN ({leagues_str})
+            WHERE T1.match_id IN ({match_ids_str})
             """
-        )
+
+        data = conn.query(query)
         data["is_open_play"] = data.apply(
             lambda r: (r["notes"] != "penalty")
             & (r["sca_1_event"] not in ["Pass (Dead)", "Fouled"]),
@@ -505,7 +506,14 @@ class TeamPizzaDataSource(DataSource):
         data["big_chance"] = (data["xg"] > 0.3).astype(int)
         return data
 
-    def impl_get_data(self, season: int, leagues: List[str], team: str) -> pd.DataFrame:
+    def impl_get_data(
+        self,
+        season: int,
+        leagues: List[str],
+        team: str,
+        start_date: dt.date = None,
+        end_date: dt.date = None,
+    ) -> pd.DataFrame:
         conn = Connection("M0neyMa$e")
 
         template = self.get_template()
@@ -522,12 +530,17 @@ class TeamPizzaDataSource(DataSource):
             "gender",
             "match_id",
         ] + all_template_columns
-        data = conn.query(
-            f"""
+        query = f"""
             SELECT  `{'`,`'.join(all_columns)}`  FROM fbref WHERE comp in ({','.join([f"'{league}'" for league in leagues])}) AND season = {season}
         """
-        )
-        shot_data = self._get_shots_data(leagues, season)
+        if start_date is not None:
+            query += f" AND date >= '{start_date}'"
+        if end_date is not None:
+            query += f" AND date <= '{end_date}'"
+
+        data = conn.query(query=query)
+        unique_match_ids = data["match_id"].unique().tolist()
+        shot_data = self._get_shots_data(unique_match_ids)
         combined_shot_data = self._aggregate_shot_data(shot_data)
         data_agg_by_team = self._aggregate_by_team(data)
         data_agg_by_opponent = self._aggregate_by_opponent(data)
@@ -558,6 +571,17 @@ class TeamPizzaDataSource(DataSource):
         output["Decorated Team"] = get_decorated_team_name_from_fb_name(
             team, output["Competition"].tolist()[0]
         )
+        if start_date and end_date:
+            date_label = (
+                f"{start_date.strftime('%d %b, %Y')} - {end_date.strftime('%d %b, %Y')}"
+            )
+        elif start_date:
+            date_label = f"from {start_date.strftime('%d %b, %Y')}"
+        elif end_date:
+            date_label = f"until {end_date.strftime('%d %b, %Y')}"
+        else:
+            date_label = ""
+        output["DateLabel"] = date_label
         return output
 
 
