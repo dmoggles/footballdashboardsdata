@@ -6,3 +6,4 @@ from footballdashboardsdata.shotdata import ShotDataSource, ShotDataSourceEvents
 from footballdashboardsdata.radar import RadarDataSource
 from footballdashboardsdata.player_shot_datasource import PlayerShotDatasource
 from footballdashboardsdata.team_rank_comparison import TeamRankDataSource
+from footballdashboardsdata.scatter import ScatterDataSource
