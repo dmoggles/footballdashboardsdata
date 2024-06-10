@@ -206,7 +206,7 @@ class ScatterDataSource(DataSource):
             query_string += f"AND enriched_position IN ({position_string})"
         if teams:
             team_string = ", ".join([f"'{team}'" for team in teams])
-            query_string += f"AND team IN ({team_string})"
+            query_string += f"AND squad IN ({team_string})"
         query_string += """
         GROUP BY player_id, player, comp, squad
         """
