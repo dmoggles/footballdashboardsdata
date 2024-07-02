@@ -21,6 +21,12 @@ COMPUTED_STATS = [
         "SUM(tackles_vs_dribbles_won)/SUM(tackles_vs_dribbles)",
         False,
     ),
+    (
+        "psxg_minus_goals_conceded",
+        "PSxG - Goals Conceded",
+        "SUM(psxg_gk) - SUM(goals_conceded)",
+        True,
+    ),
 ]
 
 
@@ -276,6 +282,7 @@ class ScatterDataSource(DataSource):
         minutes_filter: int = 0,
         normalize_per_90: bool = True,
         age_filter: Tuple[int, int] = None,
+        value_highlights: Tuple[Tuple[float, float], Tuple[float, float]] = None,
     ):
         _position_filter = position_filter.copy() or []
         if "LB" in _position_filter:
@@ -289,6 +296,7 @@ class ScatterDataSource(DataSource):
 
         item_highlights = item_highlights or []
         team_highlights = team_highlights or []
+        value_highlights = value_highlights or ((0, 1), (0, 1))
         age_filter = age_filter or (0, 100)
         dob_values = (
             add_years(dt.datetime.now(), -age_filter[1]).strftime("%Y-%m-%d"),
@@ -316,6 +324,14 @@ class ScatterDataSource(DataSource):
             )
         else:
             data["annotate"] = data["squad"].apply(lambda x: x in item_highlights)
+
+        value_scaler = MinMaxScaler().fit_transform(data[["x_axis", "y_axis"]])
+        data["annotate"] = data["annotate"] | (
+            (value_scaler[:, 0] < value_highlights[0][0])
+            | (value_scaler[:, 0] > value_highlights[0][1])
+            | (value_scaler[:, 1] < value_highlights[1][0])
+            | (value_scaler[:, 1] > value_highlights[1][1])
+        )
 
         data["x_axis_name"] = self._format_label(x_axis, normalize_per_90)
         data["y_axis_name"] = self._format_label(y_axis, normalize_per_90)
