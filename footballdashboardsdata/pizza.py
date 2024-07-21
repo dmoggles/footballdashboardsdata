@@ -98,7 +98,7 @@ class PizzaDataSource(DataSource):
 
     def impl_get_data(
         self,
-        player_name: str,
+        player_id: str,
         leagues: List[str],
         team: str,
         season: int,
@@ -188,7 +188,7 @@ class PizzaDataSource(DataSource):
             fbref_data.pipe(aggregate_by, [fb.PLAYER_ID, fb.TEAM]).pipe(per_90).df
         )
         non_pos_resetricted_player_df = non_position_restricted_player_data[
-            non_position_restricted_player_data[fb.PLAYER.N] == player_name
+            non_position_restricted_player_data[fb.PLAYER_ID.N] == player_id
         ]
 
         transformed_data = (
@@ -217,17 +217,17 @@ class PizzaDataSource(DataSource):
             ],
         ).df
         if (
-            df.loc[(df[fb.PLAYER.N] == player_name) & (df[fb.TEAM.N] == team)].shape[0]
+            df.loc[(df[fb.PLAYER_ID.N] == player_id) & (df[fb.TEAM.N] == team)].shape[0]
             == 0
         ):
             # if player_name not in df[fb.PLAYER.N].unique():
             df_player = transformed_data.pipe(
-                filter, [Filter(fb.PLAYER, player_name, filters.EQ)]
+                filter, [Filter(fb.PLAYER_ID, player_id, filters.EQ)]
             ).df
             df = pd.concat([df, df_player])
 
         if use_all_minutes:
-            df = df.loc[df[fb.PLAYER.N] != player_name]
+            df = df.loc[df[fb.PLAYER_ID.N] != player_id]
 
             df = pd.concat([df, non_pos_resetricted_player_df])
 
@@ -236,10 +236,10 @@ class PizzaDataSource(DataSource):
         if not filter_to_player:
             return output
         output_row = output.loc[
-            (output["Player"] == player_name) & (output["Team"] == team)
+            (output["player_id"] == player_id) & (output["Team"] == team)
         ].copy()
         player_dob = orig_df.loc[
-            (orig_df[fb.PLAYER.N] == player_name) & (orig_df[fb.TEAM.N] == team), "dob"
+            (orig_df[fb.PLAYER_ID.N] == player_id) & (orig_df[fb.TEAM.N] == team), "dob"
         ].iloc[0]
         if player_dob != pd.Timestamp(1900, 1, 1):
             output_row["Age"] = int((max(orig_df[fb.DATE.N]) - player_dob).days / 365)

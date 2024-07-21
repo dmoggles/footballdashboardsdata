@@ -12,7 +12,7 @@ class RadarDataSource(DataSource):
     def impl_get_data(
         self,
         template_name: str,
-        players: List[str],
+        player_ids: List[str],
         leagues: List[str],
         teams: List[str],
         seasons: List[int],
@@ -20,7 +20,7 @@ class RadarDataSource(DataSource):
         end_dates: List[dt.date] = None,
         use_all_minutes: bool = False,
     ) -> pd.DataFrame:
-        assert len(players) == 2, "Must provide exactly 2 players"
+        assert len(player_ids) == 2, "Must provide exactly 2 players"
         assert len(teams) == 2, "Must provide exactly 2 teams"
         assert len(seasons) == 2, "Must provide exactly 2 seasons"
         start_dates = start_dates or [None, None]
@@ -28,7 +28,7 @@ class RadarDataSource(DataSource):
 
         df1 = DataSource.get_data(
             template_name,
-            player_name=players[0],
+            player_id=player_ids[0],
             leagues=leagues,
             team=teams[0],
             season=seasons[0],
@@ -38,7 +38,7 @@ class RadarDataSource(DataSource):
         )
         df2 = DataSource.get_data(
             template_name,
-            player_name=players[1],
+            player_id=player_ids[1],
             leagues=leagues,
             team=teams[1],
             season=seasons[1],
