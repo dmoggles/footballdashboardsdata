@@ -2,6 +2,7 @@ import pandas as pd
 from abc import ABC, abstractmethod
 from footballdashboardsdata.utils.subclassing import get_all_subclasses
 from dbconnect.connector import Connection
+from footmav.data_definitions.whoscored.constants import EventType
 
 
 def attach_positional_data(conn, data):
@@ -94,9 +95,9 @@ def get_dataframe_for_match(match_id: int, conn: Connection):
            WHERE W.matchId={match_id} AND T1.gender='{gender}' AND T2.gender='{gender}'
     
     """
-    data1 = conn.wsquery(query1)
+    data1 = conn.query(query1, lambda x: EventType(x))
     data1["sub_id"] = 1
-    data2 = conn.wsquery(query2)
+    data2 = conn.query(query2, lambda x: EventType(x))
 
     data = pd.concat([data1, data2])
     data["sub_id"] = data["sub_id"].fillna(1)

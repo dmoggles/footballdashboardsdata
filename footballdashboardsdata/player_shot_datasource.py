@@ -1,6 +1,14 @@
 from footballdashboardsdata.datasource import DataSource
 from dbconnect.connector import Connection
-from footmav.utils.whoscored_funcs import minutes, in_rectangle, is_goal, col_has_qualifier, is_touch, in_attacking_box
+from footmav.utils.whoscored_funcs import (
+    minutes,
+    in_rectangle,
+    is_goal,
+    col_has_qualifier,
+    is_touch,
+    in_attacking_box,
+)
+from footmav.data_definitions.whoscored.constants import EventType
 
 
 class PlayerShotDatasource(DataSource):
@@ -8,9 +16,11 @@ class PlayerShotDatasource(DataSource):
     def get_name(cls) -> str:
         return "player_shot_data"
 
-    def _minutes_played(self, season: int, competition: str, team: str, player_id: int) -> int:
+    def _minutes_played(
+        self, season: int, competition: str, team: str, player_id: int
+    ) -> int:
         conn = Connection("M0neyMa$e")
-        data = conn.wsquery(
+        data = conn.query(
             f"""
             SELECT * FROM whoscored T1
             WHERE T1.season = {season}  
@@ -18,13 +28,16 @@ class PlayerShotDatasource(DataSource):
             AND T1.team = '{team}'     
             AND T1.playerId = {player_id}
             
-        """
+        """,
+            lambda x: EventType(x),
         )
         num_minutes = minutes(data)["minutes"].sum()
         box_touches = (is_touch(data) & in_attacking_box(data, start=True)).sum()
         return num_minutes, box_touches
 
-    def _get_player_id(self, season: int, competition: str, team: str, player: str) -> int:
+    def _get_player_id(
+        self, season: int, competition: str, team: str, player: str
+    ) -> int:
         conn = Connection("M0neyMa$e")
         data = conn.query(
             f"""
@@ -37,8 +50,8 @@ class PlayerShotDatasource(DataSource):
     def impl_get_data(self, season: int, competition: str, team: str, player: str):
         conn = Connection("M0neyMa$e")
         player_id = self._get_player_id(season, competition, team, player)
-        gender = 'w' if competition in ['WSL'] else 'm'
-        data = conn.wsquery(
+        gender = "w" if competition in ["WSL"] else "m"
+        data = conn.query(
             f"""
         SELECT T1.*,T2.*, T3.*, T4.decorated_name AS decorated_team_name,
         T5.decorated_name as decorated_league_name FROM whoscored T1
@@ -55,9 +68,12 @@ class PlayerShotDatasource(DataSource):
         AND T1.team = '{team}'     
         AND T1.playerId = {player_id}
         
-        """
+        """,
+            lambda x: EventType(x),
         )
-        minutes, box_touches = self._minutes_played(season, competition, team, player_id)
+        minutes, box_touches = self._minutes_played(
+            season, competition, team, player_id
+        )
         data["minutes"] = minutes
         data["box_touches"] = box_touches
         data["is_goal"] = is_goal(data)

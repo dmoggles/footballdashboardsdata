@@ -70,7 +70,7 @@ class ShotDataSourceEvents(DataSource):
             
 
         """
-        data = conn.wsquery(query)
+        data = conn.query(query, lambda x: EventType(x))
         data["is_open_play"] = (
             (~WF.col_has_qualifier(data, qualifier_code=24))
             & (~WF.col_has_qualifier(data, qualifier_code=25))
