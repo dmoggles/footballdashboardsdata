@@ -27,6 +27,24 @@ COMPUTED_STATS = [
         "SUM(psxg_gk) - SUM(goals_conceded)",
         True,
     ),
+    (
+        "conversion_rate",
+        "Shot Conversion Rate",
+        "SUM(goals)/SUM(shots_total)",
+        False,
+    ),
+    (
+        "shots_on_target_pct",
+        "Shots on Target Pct",
+        "SUM(shots_on_target)/SUM(shots_total)",
+        False,
+    ),
+    (
+        "shots_per_box_touch",
+        "Shots per Touches in Pen Area",
+        "SUM(shots_total)/SUM(touches_att_pen_area)",
+        False,
+    ),
 ]
 
 
