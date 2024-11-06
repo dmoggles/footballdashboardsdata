@@ -30,7 +30,7 @@ COMPUTED_STATS = [
     (
         "conversion_rate",
         "Shot Conversion Rate",
-        "SUM(goals)/SUM(shots_total)",
+        "(SUM(goals)-SUM(pens_made))/SUM(shots_total)",
         False,
     ),
     (
