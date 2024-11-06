@@ -45,6 +45,13 @@ COMPUTED_STATS = [
         "SUM(shots_total)/SUM(touches_att_pen_area)",
         False,
     ),
+    (
+        "x_goal_contributions",
+        "NPxG + xA",
+        "SUM(npxg)+SUM(xag)",
+        True
+
+    )
 ]
 
 
@@ -216,7 +223,9 @@ class ScatterDataSource(DataSource):
                 if color_axis in self.CATEGORICAL_COLS:
                     query_string += f",{color_axis} AS color_axis"
                 else:
-                    query_string += f",SUM({color_axis}) AS color_axis"
+                    
+                    color_axis = next((t[2] for t in COMPUTED_STATS if t[0] == color_axis), f"SUM({color_axis})")
+                    query_string += f",{color_axis} AS color_axis"
         query_string += f"""
         FROM fbref AS t1
         WHERE season = {season}
