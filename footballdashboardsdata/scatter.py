@@ -438,7 +438,9 @@ class ScatterDataSource(DataSource):
                 v[0] for v in COMPUTED_STATS if v[3] == False
             ]:
                 raw_data["y_axis"] = raw_data["y_axis"] / raw_data["minutes"] * 90
-            if size_axis and size_axis != "minutes":
+            if size_axis and size_axis != "minutes" and size_axis not in [
+                v[0] for v in COMPUTED_STATS if v[3] == False
+            ]:
                 raw_data["size_axis"] = raw_data["size_axis"] / raw_data["minutes"] * 90
             if (
                 color_axis
