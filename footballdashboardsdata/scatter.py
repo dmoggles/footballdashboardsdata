@@ -211,6 +211,10 @@ class ScatterDataSource(DataSource):
         {y_axis} AS y_axis
         """
         if size_axis:
+            size_axis = next(
+                (t[2] for t in COMPUTED_STATS if t[0] == size_axis),
+                f"SUM({size_axis})",
+            )
             query_string += f",SUM({size_axis}) AS size_axis"
         if color_axis:
             if color_axis not in self.MOST_COMMON_AGG_COLS:
