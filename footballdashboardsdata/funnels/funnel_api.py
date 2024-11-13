@@ -96,9 +96,10 @@ def get_dataframe_for_match(match_id: int, conn: Connection):
     
     """
     data1 = conn.query(query1, lambda x: EventType(x))
+    team_to_id_map = data1[["team", "teamId"]].drop_duplicates().set_index("team").to_dict()['teamId']
     data1["sub_id"] = 1
     data2 = conn.query(query2, lambda x: EventType(x))
-
+    data2['teamId'] = data2['team'].map(team_to_id_map)
     data = pd.concat([data1, data2])
     data["sub_id"] = data["sub_id"].fillna(1)
     data = data.sort_values(["period", "minute", "second", "eventId", "sub_id"])
